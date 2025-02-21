@@ -1,9 +1,10 @@
 #!/bin/sh
 
-git clone https://luajit.org/git/luajit.git ~/luajit
+mkdir ~/luajit
 cd ~/luajit
-mkdir /tmp/luajit
-make PREFIX=/tmp/luajit
-make install PREFIX=/tmp/luajit
-echo "export PATH=$PATH:/tmp/luajit/src/bin"
-source ~/.bashrc
+git clone https://luajit.org/git/luajit.git ./repo
+mkdir ./build
+cd ./repo
+make PREFIX=~/luajit/build
+make install PREFIX=~/luajit/build
+echo 'export PATH=$PATH:$HOME/luajit/build/bin' >> ~/.bashrc
