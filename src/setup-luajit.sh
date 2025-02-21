@@ -1,5 +1,14 @@
 #!/bin/sh
 
+function print_usage() {
+    echo "Usage: $0"    
+}
+
+if [ $# -ne 0 ]; then
+    print_usage
+    exit 1
+fi
+
 mkdir ~/luajit
 cd ~/luajit
 git clone https://luajit.org/git/luajit.git ./repo
