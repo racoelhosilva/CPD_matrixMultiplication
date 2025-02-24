@@ -39,18 +39,24 @@ local function on_mult(m, n, p)
     local mat_b = init_array(n, p, true)
     local mat_c = init_array(m, p, false)
 
-    for i = 0, m - 1 do
-        for j = 0, p - 1 do
-            temp = 0
-            for k = 0, n - 1 do
-                temp = temp + mat_a[i * n + k + 1] * mat_b[k * p + j + 1];
+    execute_mult = function()
+        for i = 0, m - 1 do
+            for j = 0, p - 1 do
+                temp = 0
+                for k = 0, n - 1 do
+                    temp = temp + mat_a[i * n + k + 1] * mat_b[k * p + j + 1];
+                end
+                mat_c[i * p + j + 1] = temp
             end
-            mat_c[i * p + j + 1] = temp
         end
     end
 
+    time = time_func(execute_ops)
+
     print("Result matrix:")
     print_first_elems(mat_c, n, p);
+
+    return time
 end
 
 local function on_mult_line(m, n, p)
@@ -58,16 +64,22 @@ local function on_mult_line(m, n, p)
     local mat_b = init_array(n, p, true)
     local mat_c = init_array(m, p, false)
 
-    for i = 0, m - 1 do
-        for k = 0, n - 1 do
-            for j = 0, p - 1 do
-                mat_c[i * p + j + 1] = mat_c[i * p + j + 1] + mat_a[i * n + k + 1] * mat_b[k * p + j + 1];
+    execute_mult = function ()
+        for i = 0, m - 1 do
+            for k = 0, n - 1 do
+                for j = 0, p - 1 do
+                    mat_c[i * p + j + 1] = mat_c[i * p + j + 1] + mat_a[i * n + k + 1] * mat_b[k * p + j + 1];
+                end
             end
-        end
+        end 
     end
+
+    time = time_func(execute_mult)
 
     print("Result matrix:")
     print_first_elems(mat_c, n, p);
+
+    return time
 end
 
 local function print_usage()
@@ -116,9 +128,9 @@ local function main()
 
     local time
     if op == 1 then
-        time = time_func(function () on_mult(line, col, line) end)
+        time = on_mult(line, col, line)
     elseif op == 2 then
-        time = time_func(function () on_mult_line(line, col, line) end)
+        time = on_mult_line(line, col, line)
     else
         print_usage()
         return
