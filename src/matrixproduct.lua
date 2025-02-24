@@ -51,7 +51,7 @@ local function on_mult(m, n, p)
         end
     end
 
-    time = time_func(execute_ops)
+    time = time_func(execute_mult)
 
     print("Result matrix:")
     print_first_elems(mat_c, n, p);
