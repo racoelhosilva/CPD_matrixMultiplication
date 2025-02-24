@@ -236,14 +236,6 @@ std::ofstream createFile(const string &fileName)
 		return file;
 	}
 
-	fs::path p(fileName);
-
-	if (!p.parent_path().empty())
-	{
-		std::error_code ec;
-		fs::create_directories(p.parent_path(), ec);
-	}
-
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
 	file << "OPERATION_MODE,LIN,COL,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << endl;
 	return file;
