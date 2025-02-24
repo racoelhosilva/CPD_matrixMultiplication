@@ -45,9 +45,9 @@ void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
 }
 
 // Displays 10 elements of the result matrix to verify correctness
-void print_first_elems(double *mat)
+void print_first_elems(double *mat, int n = 10)
 {
-	for (int j = 0; j < 10; j++)
+	for (int j = 0; j < min(10, n); j++)
 		cout << mat[j] << " ";
 	cout << endl;
 }
@@ -90,7 +90,7 @@ double timeFunc(Function function, long long *values, int m, int n, int p)
 
 	print_time_diff(Time1, Time2);
 
-	print_first_elems(mat_C);
+	print_first_elems(mat_C, m * n);
 
 	ret = PAPI_stop(EventSet, values);
 	if (ret != PAPI_OK)
@@ -225,7 +225,7 @@ void printUsage(const string &programmName)
 std::ofstream createFile(const string &fileName)
 {
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
-	
+
 	if (!std::filesystem::exists(fileName))
 		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << endl;
 
