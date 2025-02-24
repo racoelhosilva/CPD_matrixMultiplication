@@ -146,9 +146,6 @@ double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
 	double temp;
 	int I, J, K, i, j, k;
 
-	if (m_ar % bkSize != 0 || m_br % bkSize != 0 || m_cr % bkSize != 0)
-		return -1.0;
-
 	double *pha, *phb, *phc;
 
 	pha = init_array(m_ar, m_br, true);
@@ -160,18 +157,17 @@ double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
 
 	Time1 = clock();
 
-	// TODO(mm): use for loops from OmMultLine?
 	for (I = 0; I < m_ar; I += bkSize)
 	{
 		for (K = 0; K < m_br; K += bkSize)
 		{
 			for (J = 0; J < m_cr; J += bkSize)
 			{
-				for (i = I; i < I + bkSize; i++)
+				for (i = I; i < min(I + bkSize, m_ar); i++)
 				{
-					for (k = K; k < K + bkSize; k++)
+					for (k = K; k < min(K + bkSize, m_br); k++)
 					{
-						for (j = J; j < J + bkSize; j++)
+						for (j = J; j < min(J + bkSize, m_cr); j++)
 						{
 							phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
 						}
