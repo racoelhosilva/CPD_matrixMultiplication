@@ -163,47 +163,23 @@ double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
 	// TODO(mm): use for loops from OmMultLine?
 	for (I = 0; I < m_ar; I += bkSize)
 	{
-		for (J = 0; J < m_cr; J += bkSize)
+		for (K = 0; K < m_br; K += bkSize)
 		{
-			for (K = 0; K < m_br; K += bkSize)
+			for (J = 0; J < m_cr; J += bkSize)
 			{
 				for (i = I; i < I + bkSize; i++)
 				{
-					for (j = J; j < J + bkSize; j++)
+					for (k = K; k < K + bkSize; k++)
 					{
-						temp = 0;
-						for (k = K; k < K + bkSize; k++)
+						for (j = J; j < J + bkSize; j++)
 						{
-							temp += pha[i * m_br + k] * phb[k * m_cr + j];
+							phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
 						}
-						phc[i * m_cr + j] += temp;
 					}
 				}
 			}
 		}
 	}
-
-	// But It's Honest Work
-	// int a_bk = m_ar / bkSize, b_bk = m_br / bkSize, c_bk = m_cr / bkSize;
-	// for (int a = 0; a < a_bk; a++)
-	// {
-	// 	for (int b = 0; b < b_bk; b++)
-	// 	{
-	// 		for (int c = 0; c < c_bk; c++)
-	// 		{
-	// 			for (i = 0; i < bkSize; i++)
-	// 			{
-	// 				for (j = 0; j < bkSize; j++)
-	// 				{
-	// 					temp = 0;
-	// 					for (k = 0; k < bkSize; k++)
-	// 						temp += pha[(a * bkSize + i) * m_br + c * bkSize + k] * phb[(k + c * bkSize) * m_cr + b * bkSize + j];
-	// 					phc[(i + a * bkSize) * m_cr + b * bkSize + j] += temp;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	Time2 = clock();
 	print_time_diff(Time1, Time2);
@@ -323,7 +299,6 @@ int main(int argc, char *argv[])
 		break;
 	case 3:
 		time = OnMultBlock(lin, col, lin, blockSize);
-		// OnMultBlock(lin, col, blockSize);
 		break;
 	default:
 		printUsage(argv[0]);
