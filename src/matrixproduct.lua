@@ -71,11 +71,11 @@ local function on_mult_line(m, n, p)
 end
 
 local function print_usage()
-    print("Usage: lua matrixproduct.lua <op> <lin> <col> <output>")
-    print("  <op>       : Opration mode: 1, 2, 3 (required)")
-    print("  <lin>      : Number of lines (required)")
-    print("  <col>      : Number of columns (required)")
-    print("  <output>   : Path to output filename (required)")
+    print("Usage: luajit matrixproduct.lua <op> <lin> <col> <output>")
+    print("  <op>     : Opration mode: 1, 2 (required)")
+    print("  <lin>    : Number of lines (required)")
+    print("  <col>    : Number of columns (required)")
+    print("  <output> : Path to output filename (required)")
 end
 
 local function open_file(filename)
