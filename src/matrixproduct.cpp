@@ -244,10 +244,10 @@ void printUsage(const string &programmName)
 {
 	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
 			  << "  <op> 		: Opration mode: 1, 2, 3 (required)" << endl
-			  << "	<lin>		: Number of lines (required)" << endl
-			  << "	<col>		: Number of columns (required)" << endl
-			  << "	<output>	: Path to output filename (required)" << endl
-			  << "	[blockSize]	: Size of a block (optional)" << endl;
+			  << "  <lin>       : Number of lines (required)" << endl
+			  << "  <col>       : Number of columns (required)" << endl
+			  << "  <output>    : Path to output filename (required)" << endl
+			  << "  [blockSize] : Size of a block (optional)" << endl;
 }
 
 std::ofstream createFile(const string &fileName)
