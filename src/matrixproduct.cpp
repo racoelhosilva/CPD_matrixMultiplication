@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <time.h>
@@ -10,6 +11,10 @@
 using namespace std;
 
 #define SYSTEMTIME clock_t
+
+struct {
+
+} 
 
 // Initialize matrix
 // Print first elements
@@ -30,7 +35,7 @@ double *init_array(int m, int n, bool fill)
 	{
 		for (int j = 0; j < n; j++)
 		{
-			mat[i * n + j] = i + j + 1; // TODO(Process-ing): Check if value matters
+			mat[i * n + j] = i + j + 1;
 		}
 	}
 
@@ -53,10 +58,66 @@ void print_first_elems(double *mat, int n, int m)
 	cout << endl;
 }
 
+template <typename Function>
+double timeFunc(Function function) {
+	int EventSet = PAPI_NULL;
+	long long values[2];
+	int ret;
+
+	ret = PAPI_library_init(PAPI_VER_CURRENT);
+	if (ret != PAPI_VER_CURRENT)
+		std::cout << "FAIL" << endl;
+
+	ret = PAPI_create_eventset(&EventSet);
+	if (ret != PAPI_OK)
+		std::cout << "ERROR: create eventset" << endl;
+
+	ret = PAPI_add_event(EventSet, PAPI_L1_DCM);
+	if (ret != PAPI_OK)
+		std::cout << "ERROR: PAPI_L1_DCM" << endl;
+
+	ret = PAPI_add_event(EventSet, PAPI_L2_DCM);
+	if (ret != PAPI_OK)
+		std::cout << "ERROR: PAPI_L2_DCM" << endl;
+
+	ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK)
+		std::cout << "ERROR: Start PAPI" << endl;
+
+	SYSTEMTIME Time1, Time2;
+	Time1 = clock();
+	
+	function();
+
+	Time2 = clock();
+	
+	print_time_diff(Time1, Time2);
+
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK)
+		std::cout << "ERROR: Stop PAPI" << endl;
+
+	ret = PAPI_reset(EventSet);
+	if (ret != PAPI_OK)
+		std::cout << "FAIL reset" << endl;
+
+	ret = PAPI_remove_event(EventSet, PAPI_L1_DCM);
+	if (ret != PAPI_OK)
+		std::cout << "FAIL remove event" << endl;
+
+	ret = PAPI_remove_event(EventSet, PAPI_L2_DCM);
+	if (ret != PAPI_OK)
+		std::cout << "FAIL remove event" << endl;
+
+	ret = PAPI_destroy_eventset(&EventSet);
+	if (ret != PAPI_OK)
+		std::cout << "FAIL destroy" << endl;
+	
+	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
+}
+
 double OnMult(int m_ar, int m_br, int m_cr)
 {
-	SYSTEMTIME Time1, Time2;
-
 	double temp;
 	int i, j, k;
 
@@ -69,24 +130,23 @@ double OnMult(int m_ar, int m_br, int m_cr)
 
 	if (pha == NULL || phb == NULL || phc == NULL)
 		return -1.0;
+	
 
-	Time1 = clock();
-
-	for (i = 0; i < m_ar; i++)
-	{
-		for (j = 0; j < m_cr; j++)
+	auto execMult = [&]() {
+		for (i = 0; i < m_ar; i++)
 		{
-			temp = 0;
-			for (k = 0; k < m_br; k++)
-				temp += pha[i * m_br + k] * phb[k * m_cr + j];
-			phc[i * m_cr + j] = temp;
+			for (j = 0; j < m_cr; j++)
+			{
+				temp = 0;
+				for (k = 0; k < m_br; k++)
+					temp += pha[i * m_br + k] * phb[k * m_cr + j];
+				phc[i * m_cr + j] = temp;
+			}
 		}
-	}
+	};
+		
+	double time = timeFunc(execMult);
 
-	Time2 = clock();
-	print_time_diff(Time1, Time2);
-
-	// TODO(Process-ing): Is this necessary?
 	cout << "Result matrix: " << endl;
 	print_first_elems(phc, m_ar, m_cr);
 
@@ -94,14 +154,11 @@ double OnMult(int m_ar, int m_br, int m_cr)
 	free(phb);
 	free(phc);
 
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
+	return time;
 }
 
 double OnMultLine(int m_ar, int m_br, int m_cr)
 {
-	SYSTEMTIME Time1, Time2;
-
-	double temp;
 	int i, j, k;
 
 	double *pha, *phb, *phc;
@@ -113,22 +170,19 @@ double OnMultLine(int m_ar, int m_br, int m_cr)
 	if (pha == NULL || phb == NULL || phc == NULL)
 		return -1.0;
 
-	Time1 = clock();
-
-	for (i = 0; i < m_ar; i++)
-	{
-		for (k = 0; k < m_br; k++)
+	auto execMult = [&]() {
+		for (i = 0; i < m_ar; i++)
 		{
-			// TODO (Process-ing): Remove temporary variable (maybe?)
-			for (j = 0; j < m_cr; j++)
-				phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
+			for (k = 0; k < m_br; k++)
+			{
+				for (j = 0; j < m_cr; j++)
+					phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
+			}
 		}
-	}
+	};
+		
+	double time = timeFunc(execMult);
 
-	Time2 = clock();
-	print_time_diff(Time1, Time2);
-
-	// TODO(Process-ing): Is this necessary?
 	cout << "Result matrix: " << endl;
 	print_first_elems(phc, m_ar, m_cr);
 
@@ -136,15 +190,12 @@ double OnMultLine(int m_ar, int m_br, int m_cr)
 	free(phb);
 	free(phc);
 
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
+	return time;
 }
 
 double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
 {
 	SYSTEMTIME Time1, Time2;
-
-	double temp;
-	int I, J, K, i, j, k;
 
 	double *pha, *phb, *phc;
 
@@ -157,25 +208,26 @@ double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
 
 	Time1 = clock();
 
-	for (I = 0; I < m_ar; I += bkSize)
-	{
-		for (K = 0; K < m_br; K += bkSize)
-		{
-			for (J = 0; J < m_cr; J += bkSize)
-			{
-				for (i = I; i < min(I + bkSize, m_ar); i++)
-				{
-					for (k = K; k < min(K + bkSize, m_br); k++)
-					{
-						for (j = J; j < min(J + bkSize, m_cr); j++)
-						{
-							phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
-						}
-					}
-				}
-			}
-		}
-	}
+	int row, col, i, k, j;
+
+	int maxRow = ceil((double)m_ar / bkSize); 
+	for (row = 0; row < maxRow ; ++row)
+    {
+		int maxCol = ceil((double)m_cr / bkSize);
+        for (col = 0; col < endCol; ++col)
+        {
+            for (i = row * bkSize; i <= min((row + 1) * bkSize, m_ar) - 1; ++i)
+            {
+                for (k = 0; k <= m_br - 1; ++k)
+                {
+                    for (j = col * bkSize; j <= min((col + 1) * bkSize, m_cr) - 1; ++j)
+                    {
+                        phc[i * m_cr + j + 1] += pha[i * m_br + k + 1] * phb[k * m_cr + j + 1];
+                    }
+                }
+            }
+        }
+    }
 
 	Time2 = clock();
 	print_time_diff(Time1, Time2);
@@ -253,30 +305,6 @@ int main(int argc, char *argv[])
 	double time = 0.0;
 	std::ofstream file = createFile(argv[4]);
 
-	int EventSet = PAPI_NULL;
-	long long values[2];
-	int ret;
-
-	ret = PAPI_library_init(PAPI_VER_CURRENT);
-	if (ret != PAPI_VER_CURRENT)
-		std::cout << "FAIL" << endl;
-
-	ret = PAPI_create_eventset(&EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: create eventset" << endl;
-
-	ret = PAPI_add_event(EventSet, PAPI_L1_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L1_DCM" << endl;
-
-	ret = PAPI_add_event(EventSet, PAPI_L2_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L2_DCM" << endl;
-
-	ret = PAPI_start(EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: Start PAPI" << endl;
-
 	switch (op)
 	{
 	case 1:
@@ -293,37 +321,18 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	ret = PAPI_stop(EventSet, values);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: Stop PAPI" << endl;
-
 	file << op << ','
 		 << lin << ','
 		 << col << ','
 		 << blockSize << ','
 		 << time << ','
-		 << values[0] << ','
-		 << values[1] << endl;
+		 //<< values[0] << ','
+		 //<< values[1] 
+		 << endl;
 
 	file.close();
-	printf("L1 DCM: %lld \n", values[0]);
-	printf("L2 DCM: %lld \n", values[1]);
-
-	ret = PAPI_reset(EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL reset" << endl;
-
-	ret = PAPI_remove_event(EventSet, PAPI_L1_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
-
-	ret = PAPI_remove_event(EventSet, PAPI_L2_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
-
-	ret = PAPI_destroy_eventset(&EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL destroy" << endl;
+	//printf("L1 DCM: %lld \n", values[0]);
+	//printf("L2 DCM: %lld \n", values[1]);
 
 	return 0;
 }
