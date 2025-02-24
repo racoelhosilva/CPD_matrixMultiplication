@@ -1,0 +1,64 @@
+% Page dimensions and margins
+\documentclass[12pt, a4paper]{article}
+\usepackage[a4paper, left=35mm, right=35mm, top=40mm, bottom=40mm]{geometry}
+
+% Language
+\usepackage[english]{babel}
+
+% Fonts
+\usepackage{fontspec}
+\setmainfont{Lato}
+
+% Date format
+\usepackage{datetime}
+\newdateformat{monthyear}{\monthname[\THEMONTH] \THEYEAR}
+
+% Header and footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\usepackage{lastpage}
+
+% Cross-references
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+    pdftitle={Parallel and Distributed Computing - 1st Project},
+    pdfauthor={T13G12},
+}
+
+% Images and figures
+\usepackage{graphicx}
+\graphicspath{ {./img/} }
+
+% Indent first paragraphs
+\usepackage{indentfirst}
+
+% Glossary
+% \usepackage{glossaries}
+% \input{content/glossary}
+
+\begin{document}
+
+\fancyhead{}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headsep}{36pt}
+\setlength{\headheight}{16pt}
+\fancyhead[C]{\small{Parallel and Distributed Computing - 1st Project}}
+
+\fancyfoot{}
+\renewcommand{\footrulewidth}{0.4pt}
+\setlength{\footskip}{36pt}
+\fancyfoot[L]{\small{Parallel and Distributed Computing}}
+\fancyfoot[R]{\thepage /\pageref*{LastPage}}
+
+\include{content/cover}
+
+\tableofcontents
+\clearpage
+
+\include{content/introduction}
+% ...
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
