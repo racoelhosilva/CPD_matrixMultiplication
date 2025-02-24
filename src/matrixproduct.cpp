@@ -224,11 +224,9 @@ void printUsage(const string &programmName)
 
 std::ofstream createFile(const string &fileName)
 {
-	namespace fs = std::filesystem;
-	bool exists = fs::exists(fileName);
-
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
-	if (!exists)
+	
+	if (!std::filesystem::exists(fileName))
 		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << endl;
 
 	return file;
