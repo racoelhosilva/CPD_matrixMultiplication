@@ -1,6 +1,6 @@
 #!/bin/sh
 
-g++ -O2 matrixproduct.cpp -o matrixproduct -lpapi
+g++ -std=c++17 -O2 matrixproduct.cpp -o matrixproduct -lpapi
 
 for size in $(seq 600 400 3000); do
     # TODO(Process-ing): Are the increments the same for both matrices?
