@@ -11,7 +11,7 @@
 
 ```bash
 # Run C++ program
-cpp -O2 -o matrixproduct matrixproduct.cpp -lpapi  # Make sure you have PAPI installed
+g++ -std=c++17 -O2 matrixproduct.cpp -o matrixproduct -lpapi  # Make sure you have PAPI installed
 ./matrixproduct <op> <lin> <col> <output> [blockSize]
 
 # Run Lua program
