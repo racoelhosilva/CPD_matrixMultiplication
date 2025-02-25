@@ -44,8 +44,8 @@ void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
 		 << " seconds\n";
 }
 
-// Displays 10 elements of the result matrix to verify correctness
-void print_first_elems(double *mat, int n = 10)
+// Prints up to the first 10 elements of the given matrix to verify correctness
+void print_first_elems(double *mat, int n)
 {
 	for (int j = 0; j < min(10, n); j++)
 		cout << mat[j] << " ";
@@ -175,7 +175,7 @@ double OnMultBlock(int m, int n, int p, int bkSize, long long *values)
 			{
 				for (i = row * bkSize; i < min((row + 1) * bkSize, m); ++i)
 				{
-					for (k = 0; k <= n - 1; ++k)
+					for (k = 0; k <= n - 1; ++k)	// TODO(mm): Make sure if this is correct.
 					{
 						for (j = col * bkSize; j < min((col + 1) * bkSize, p); ++j)
 						{
