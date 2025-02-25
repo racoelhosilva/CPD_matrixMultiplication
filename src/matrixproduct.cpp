@@ -12,7 +12,12 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
-// Initialize matrix
+struct Statistics {
+    double time = 0.0;
+    double gflops = 0.0;
+    long long values[2] = {0, 0};
+};
+
 double *init_array(int m, int n, bool fill)
 {
 	double *mat = (double *)calloc(m * n, sizeof(double));
@@ -44,7 +49,6 @@ void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
 		 << " seconds\n";
 }
 
-// Prints up to the first 10 elements of the given matrix to verify correctness
 void print_first_elems(double *mat, int n)
 {
 	for (int j = 0; j < min(10, n); j++)
@@ -53,13 +57,13 @@ void print_first_elems(double *mat, int n)
 }
 
 template <typename Function>
-double timeFunc(Function function, long long *values, int m, int n, int p)
+Statistics timeFunc(Function function, int m, int n, int p)
 {
 	double *mat_A = init_array(m, p, true);
 	double *mat_B = init_array(p, n, true);
 	double *mat_C = init_array(m, n, false);
 	if (!mat_A || !mat_B || !mat_C)
-		return -1.0;
+		return {-1.0, -1.0};
 
 	int EventSet = PAPI_NULL;
 	int ret;
@@ -84,15 +88,19 @@ double timeFunc(Function function, long long *values, int m, int n, int p)
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Start PAPI" << endl;
 
+	Statistics statistics;
+	
 	SYSTEMTIME Time1 = clock();
 	function(mat_A, mat_B, mat_C);
 	SYSTEMTIME Time2 = clock();
 
 	print_time_diff(Time1, Time2);
-
 	print_first_elems(mat_C, m * n);
 
-	ret = PAPI_stop(EventSet, values);
+	statistics.time = (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC;
+	statistics.gflops = (2 * pow(m, 3) / statistics.time) / 1e9;
+
+	ret = PAPI_stop(EventSet, statistics.values);
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Stop PAPI" << endl;
 
@@ -116,10 +124,10 @@ double timeFunc(Function function, long long *values, int m, int n, int p)
 	free(mat_B);
 	free(mat_C);
 
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC;
+	return statistics;
 }
 
-double OnMult(int m, int n, int p, long long *values)
+Statistics OnMult(int m, int n, int p)
 {
 	double temp;
 	int i, j, k;
@@ -138,10 +146,10 @@ double OnMult(int m, int n, int p, long long *values)
 		}
 	};
 
-	return timeFunc(execMult, values, m, n, p);
+	return timeFunc(execMult, m, n, p);
 }
 
-double OnMultLine(int m, int n, int p, long long *values)
+Statistics OnMultLine(int m, int n, int p)
 {
 	int i, j, k;
 
@@ -157,10 +165,10 @@ double OnMultLine(int m, int n, int p, long long *values)
 		}
 	};
 
-	return timeFunc(execMult, values, m, n, p);
+	return timeFunc(execMult, m, n, p);
 }
 
-double OnMultBlock(int m, int n, int p, int bkSize, long long *values)
+Statistics OnMultBlock(int m, int n, int p, int bkSize)
 {
 	int row, col, i, k, j;
 
@@ -187,7 +195,7 @@ double OnMultBlock(int m, int n, int p, int bkSize, long long *values)
 		}
 	};
 
-	return timeFunc(execMult, values, m, n, p);
+	return timeFunc(execMult, m, n, p);
 }
 
 void printUsage(const string &programmName)
@@ -205,7 +213,7 @@ std::ofstream createFile(const string &fileName)
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
 
 	if (!fileExists)
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << std::endl;
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,GFLOPS" << std::endl;
 
 	return file;
 }
@@ -222,19 +230,18 @@ int main(int argc, char *argv[])
 	int size = std::atoi(argv[2]);
 	std::ofstream file = createFile(argv[3]);
 	int blockSize = op == 3 ? std::atoi(argv[4]) : 0;
-	double time = 0.0;
-	long long values[2];
+	Statistics statistics;
 
 	switch (op)
 	{
 	case 1:
-		time = OnMult(size, size, size, values);
+		statistics = OnMult(size, size, size);
 		break;
 	case 2:
-		time = OnMultLine(size, size, size, values);
+		statistics = OnMultLine(size, size, size);
 		break;
 	case 3:
-		time = OnMultBlock(size, size, size, blockSize, values);
+		statistics = OnMultBlock(size, size, size, blockSize);
 		break;
 	default:
 		printUsage(argv[0]);
@@ -244,9 +251,10 @@ int main(int argc, char *argv[])
 	file << op << ','
 		 << size << ','
 		 << blockSize << ','
-		 << time << ','
-		 << values[0] << ','
-		 << values[1]
+		 << statistics.time << ','
+		 << statistics.values[0] << ','
+		 << statistics.values[1] << ','
+		 << statistics.gflops 
 		 << endl;
 
 	file.close();
