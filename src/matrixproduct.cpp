@@ -196,38 +196,22 @@ void handle_error(int retval)
 	exit(1);
 }
 
-void init_papi()
-{
-	int retval = PAPI_library_init(PAPI_VER_CURRENT);
-	if (retval != PAPI_VER_CURRENT && retval < 0)
-	{
-		printf("PAPI library version mismatch!\n");
-		exit(1);
-	}
-	if (retval < 0)
-		handle_error(retval);
-
-	std::cout << "PAPI Version Number: MAJOR: " << PAPI_VERSION_MAJOR(retval)
-			  << " MINOR: " << PAPI_VERSION_MINOR(retval)
-			  << " REVISION: " << PAPI_VERSION_REVISION(retval) << "\n";
-}
-
 void printUsage(const string &programmName)
 {
 	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
-			  << "  <op> 		: Opration mode: 1, 2, 3 (required)" << endl
-			  << "  <lin>       : Number of lines (required)" << endl
-			  << "  <col>       : Number of columns (required)" << endl
+			  << "  <op>        : Opration mode: 1, 2, 3 (required)" << endl
+			  << "  <size>      : Size of matrix (required)" << endl
 			  << "  <output>    : Path to output filename (required)" << endl
 			  << "  [blockSize] : Size of a block (optional)" << endl;
 }
 
 std::ofstream createFile(const string &fileName)
 {
+	bool fileExists = std::filesystem::exists(fileName);
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
 
-	if (!std::filesystem::exists(fileName))
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << endl;
+	if (!fileExists)
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << std::endl;
 
 	return file;
 }
