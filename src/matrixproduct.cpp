@@ -190,12 +190,6 @@ double OnMultBlock(int m, int n, int p, int bkSize, long long *values)
 	return timeFunc(execMult, values, m, n, p);
 }
 
-void handle_error(int retval)
-{
-	printf("PAPI error %d: %s\n", retval, PAPI_strerror(retval));
-	exit(1);
-}
-
 void printUsage(const string &programmName)
 {
 	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
