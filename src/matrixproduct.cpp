@@ -95,6 +95,8 @@ Statistics timeFunc(Function function, int m, int n, int p)
 	SYSTEMTIME Time2 = clock();
 
 	print_time_diff(Time1, Time2);
+
+	cout << "Result matrix:"
 	print_first_elems(mat_C, m * n);
 
 	statistics.time = (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC;

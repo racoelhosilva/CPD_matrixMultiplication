@@ -17,7 +17,7 @@ local function init_array(m, n, fill)
     return mat
 end
 
-local function print_first_elems(mat, m, n)
+local function print_first_elems(mat, n)
     io.write(tostring(mat[1]))
     for i = 2, math.min(10, n) do
         io.write(", ", tostring(mat[i]))
@@ -51,10 +51,10 @@ local function on_mult(m, n, p)
         end
     end
 
-    time = time_func(execute_ops)
+    time = time_func(execute_mult)
 
     print("Result matrix:")
-    print_first_elems(mat_c, n, p);
+    print_first_elems(mat_c, m * n);
 
     return time
 end
@@ -77,7 +77,7 @@ local function on_mult_line(m, n, p)
     time = time_func(execute_mult)
 
     print("Result matrix:")
-    print_first_elems(mat_c, n, p);
+    print_first_elems(mat_c, m * n);
 
     return time
 end
@@ -85,12 +85,11 @@ end
 local function print_usage()
     print("Usage: luajit matrixproduct.lua <op> <lin> <col> <output>")
     print("  <op>     : Opration mode: 1, 2 (required)")
-    print("  <lin>    : Number of lines (required)")
-    print("  <col>    : Number of columns (required)")
+    print("  <size>   : Size of matrix (required)")
     print("  <output> : Path to output filename (required)")
 end
 
-local function open_file(filename)
+local function create_file(filename)
     local file = io.open(filename, "r")
     if file ~= nil then
         file:close()
@@ -103,7 +102,7 @@ local function open_file(filename)
         if file == nil then
             error("Failed to create file")
         end
-        file:write("OPERATION_MODE,LIN,COL,BLOCK_SIZE,TIME\n")
+        file:write("OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,GFLOPS\n")
     end
 
     return file
@@ -116,28 +115,28 @@ local function main()
     end
 
     local op = tonumber(arg[1]);
-    local line = tonumber(arg[2])
-    local col = tonumber(arg[3])
-    local filename = arg[4]
-    local file = open_file(filename)
+    local size = tonumber(arg[2])
+    local filename = arg[3]
+    local file = create_file(filename)
 
-    if line == nil or col == nil then
+    if size == nil then
         print_usage()
         return
     end
 
     local time
     if op == 1 then
-        time = on_mult(line, col, line)
+        time = on_mult(size, size, size)
     elseif op == 2 then
-        time = on_mult_line(line, col, line)
+        time = on_mult_line(size, size, size)
     else
         print_usage()
         return
     end
 
     print("Time:", time, "ms")
-    file:write(table.concat({op, line, col, 0.0, time}, ",") .. "\n")
+    local gflops = (2 * (size ^ 3) / time) / 1e9
+    file:write(table.concat({op, size, 0.0, time, gflops}, ",") .. "\n")
 end
 
 main()
