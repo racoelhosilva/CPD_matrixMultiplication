@@ -29,7 +29,7 @@ local function time_func(func)
     local ti = os.clock()
     func()
     local tf = os.clock()
-    return (tf - ti) * 1000  -- ms
+    return (tf - ti)  -- seconds
 end
 
 local function on_mult(m, n, p)
@@ -86,7 +86,7 @@ local function print_usage()
     print("Usage: luajit matrixproduct.lua <op> <lin> <col> <output>")
     print("  <op>     : Opration mode: 1, 2 (required)")
     print("  <size>   : Size of matrix (required)")
-    print("  <output> : Path to output filename (required)")
+    print("  <output> : Output filename (required)")
 end
 
 local function create_file(filename)
@@ -102,7 +102,7 @@ local function create_file(filename)
         if file == nil then
             error("Failed to create file")
         end
-        file:write("OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,GFLOPS\n")
+        file:write("OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,MFLOPS\n")
     end
 
     return file
@@ -134,9 +134,9 @@ local function main()
         return
     end
 
-    print("Time:", time, "ms")
-    local gflops = (2 * (size ^ 3) / time) / 1e9
-    file:write(table.concat({op, size, 0.0, time, gflops}, ",") .. "\n")
+    print("Time:", time, "seconds")
+    local mflops = (2 * (size ^ 3) / time) / 1e6
+    file:write(table.concat({op, size, 0.0, time, mflops}, ",") .. "\n")
 end
 
 main()
