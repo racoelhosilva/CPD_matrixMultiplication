@@ -12,10 +12,11 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
-struct Statistics {
-    double time = 0.0;
-    double gflops = 0.0;
-    long long values[2] = {0, 0};
+struct Statistics
+{
+	double time = 0.0;
+	double mflops = 0.0;
+	long long values[2] = {0, 0};
 };
 
 double *init_array(int m, int n, bool fill)
@@ -62,6 +63,7 @@ Statistics timeFunc(Function function, int m, int n, int p)
 	double *mat_A = init_array(m, p, true);
 	double *mat_B = init_array(p, n, true);
 	double *mat_C = init_array(m, n, false);
+
 	if (!mat_A || !mat_B || !mat_C)
 		return {-1.0, -1.0};
 
@@ -89,18 +91,18 @@ Statistics timeFunc(Function function, int m, int n, int p)
 		std::cout << "ERROR: Start PAPI" << endl;
 
 	Statistics statistics;
-	
+
 	SYSTEMTIME Time1 = clock();
 	function(mat_A, mat_B, mat_C);
 	SYSTEMTIME Time2 = clock();
 
 	print_time_diff(Time1, Time2);
 
-	cout << "Result matrix:"
+	cout << "Result matrix:";
 	print_first_elems(mat_C, m * n);
 
-	statistics.time = (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC;
-	statistics.gflops = (2 * pow(m, 3) / statistics.time) / 1e9;
+	statistics.time = (double)(Time2 - Time1) / CLOCKS_PER_SEC;
+	statistics.mflops = (2 * m * n * p / statistics.time) / 1e6;
 
 	ret = PAPI_stop(EventSet, statistics.values);
 	if (ret != PAPI_OK)
@@ -185,7 +187,7 @@ Statistics OnMultBlock(int m, int n, int p, int bkSize)
 			{
 				for (i = row * bkSize; i < min((row + 1) * bkSize, m); ++i)
 				{
-					for (k = 0; k <= n - 1; ++k)	// TODO(mm): Make sure if this is correct.
+					for (k = 0; k <= n - 1; ++k) // TODO(mm): Make sure if this is correct.
 					{
 						for (j = col * bkSize; j < min((col + 1) * bkSize, p); ++j)
 						{
@@ -205,7 +207,7 @@ void printUsage(const string &programmName)
 	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
 			  << "  <op>        : Opration mode: 1, 2, 3 (required)" << endl
 			  << "  <size>      : Size of matrix (required)" << endl
-			  << "  <output>    : Path to output filename (required)" << endl
+			  << "  <output>    : Output filename (required)" << endl
 			  << "  [blockSize] : Size of a block (optional)" << endl;
 }
 
@@ -215,7 +217,7 @@ std::ofstream createFile(const string &fileName)
 	std::ofstream file(fileName, std::ios::out | std::ios::app);
 
 	if (!fileExists)
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,GFLOPS" << std::endl;
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << std::endl;
 
 	return file;
 }
@@ -256,7 +258,7 @@ int main(int argc, char *argv[])
 		 << statistics.time << ','
 		 << statistics.values[0] << ','
 		 << statistics.values[1] << ','
-		 << statistics.gflops 
+		 << statistics.mflops
 		 << endl;
 
 	file.close();
