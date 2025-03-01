@@ -102,7 +102,7 @@ Statistics timeFunc(Function function, int m, int n, int p)
 	print_first_elems(mat_C, m * n);
 
 	statistics.time = (double)(Time2 - Time1) / CLOCKS_PER_SEC;
-	statistics.mflops = (2 * m * n * p / statistics.time) / 1e6;
+	statistics.mflops = (2.0 * m * n * p) / (statistics.time * 1e6);
 
 	ret = PAPI_stop(EventSet, statistics.values);
 	if (ret != PAPI_OK)
