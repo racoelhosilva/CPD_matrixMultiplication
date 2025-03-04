@@ -174,24 +174,24 @@ Statistics OnMultLine(int m, int n, int p)
 
 Statistics OnMultBlock(int m, int n, int p, int bkSize)
 {
-	int row, col, i, k, j;
-
-	int endRow = ceil((double)m / bkSize);
-	int endCol = ceil((double)p / bkSize);
+	int I, J, K, i, j, k;
 
 	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
 	{
-		for (row = 0; row < endRow; ++row)
+		for (I = 0; I < m; I += bkSize)
 		{
-			for (col = 0; col < endCol; ++col)
+			for (K = 0; K < n; K += bkSize)
 			{
-				for (i = row * bkSize; i < min((row + 1) * bkSize, m); ++i)
+				for (J = 0; J < p; J += bkSize)
 				{
-					for (k = 0; k <= n - 1; ++k) // TODO(mm): Make sure if this is correct.
+					for (i = I; i < min(I + bkSize, m); i++)
 					{
-						for (j = col * bkSize; j < min((col + 1) * bkSize, p); ++j)
+						for (k = K; k < min(K + bkSize, n); k++)
 						{
-							mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+							for (j = J; j < min(J + bkSize, p); j++)
+							{
+								mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+							}
 						}
 					}
 				}
