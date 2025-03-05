@@ -83,7 +83,7 @@ local function on_mult_line(m, n, p)
 end
 
 local function print_usage()
-    print("Usage: luajit matrixproduct.lua <op> <lin> <col> <output>")
+    print("Usage: luajit matrixproduct.lua <op> <size> <output>")
     print("  <op>     : Opration mode: 1, 2 (required)")
     print("  <size>   : Size of matrix (required)")
     print("  <output> : Output filename (required)")
@@ -109,7 +109,7 @@ local function create_file(filename)
 end
 
 local function main()
-    if #arg ~= 4 then
+    if #arg ~= 3 then
         print_usage()
         return
     end

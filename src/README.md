@@ -12,10 +12,10 @@
 ```bash
 # Run C++ program
 g++ -std=c++17 -O2 matrixproduct.cpp -o matrixproduct -lpapi  # Make sure you have PAPI installed
-./matrixproduct <op> <lin> <col> <output> [blockSize]
+./matrixproduct <op> <size> <output> [blockSize]
 
 # Run Lua program
-luajit matrixproduct.lua <op> <lin> <col> <output> [blockSize]
+luajit matrixproduct.lua <op> <size> <output>
 
 # Run pile of tests
 ./run.sh
