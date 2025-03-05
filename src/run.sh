@@ -1,6 +1,6 @@
 #!/bin/sh
 
-g++ -std=c++17 -O2 matrixproduct.cpp -o matrixproduct -lpapi
+g++ -O2 matrixproduct.cpp -o matrixproduct -lpapi
 
 for size in $(seq 600 400 3000); do
     ./matrixproduct 1 "$size" "output/test-cpp-1-${size}.csv"

@@ -6,7 +6,6 @@
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
-#include <filesystem>
 
 using namespace std;
 
@@ -57,7 +56,7 @@ void print_first_elems(double *mat, int n)
 	cout << endl;
 }
 
-template<typename Function>
+template <typename Function>
 Statistics measure_exec(Function function, int m, int n, int p)
 {
 	double *mat_a = init_array(m, p, true);
@@ -213,7 +212,7 @@ void print_usage(const string &program_name)
 
 std::ofstream create_file(const string &file_name)
 {
-	bool fileExists = std::filesystem::exists(file_name);
+	bool fileExists = std::ifstream(file_name).good();
 	std::ofstream file(file_name, std::ios::out | std::ios::app);
 
 	if (!fileExists)
