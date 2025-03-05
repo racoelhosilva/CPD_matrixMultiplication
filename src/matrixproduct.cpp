@@ -98,7 +98,7 @@ Statistics measure_exec(Function function, int m, int n, int p)
 
 	print_time_diff(ti, tf);
 
-	cout << "Result matrix:";
+	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
 	statistics.time = (double)(tf - ti) / CLOCKS_PER_SEC;
@@ -172,7 +172,7 @@ Statistics on_mult_line(int m, int n, int p)
 	return measure_exec(exec_mult, m, n, p);
 }
 
-Statistics OnMultBlock(int m, int n, int p, int block_size)
+Statistics on_mult_block(int m, int n, int p, int block_size)
 {
 	int I, J, K, i, j, k;
 
@@ -205,7 +205,7 @@ Statistics OnMultBlock(int m, int n, int p, int block_size)
 void print_usage(const string &program_name)
 {
 	std::cout << "Usage: " << program_name << " <op> <size> <output> [block-size]" << endl
-			  << "  <op>         : Opration mode: 1, 2, 3 (required)" << endl
+			  << "  <op>         : Operation mode: 1, 2, 3 (required)" << endl
 			  << "  <size>       : Size of matrix (required)" << endl
 			  << "  <output>     : Output filename (required)" << endl
 			  << "  [block-size] : Size of a block (optional)" << endl;
@@ -224,13 +224,19 @@ std::ofstream create_file(const string &file_name)
 
 int main(int argc, char *argv[])
 {
-	if (argc < 4 || argc > 5)
+	if (argc < 4)
 	{
 		print_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
 	int op = std::atoi(argv[1]);
+	if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+	{
+		print_usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
 	int size = std::atoi(argv[2]);
 	std::ofstream file = create_file(argv[3]);
 	int block_size = op == 3 ? std::atoi(argv[4]) : 0;
@@ -245,7 +251,7 @@ int main(int argc, char *argv[])
 		statistics = on_mult_line(size, size, size);
 		break;
 	case 3:
-		statistics = OnMultBlock(size, size, size, block_size);
+		statistics = on_mult_block(size, size, size, block_size);
 		break;
 	default:
 		print_usage(argv[0]);
