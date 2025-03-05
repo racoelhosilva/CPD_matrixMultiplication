@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-function print_usage() {
-    echo "Usage: $0"    
+print_usage() {
+    echo "Usage: $0"
 }
 
 if [ $# -ne 0 ]; then
@@ -10,10 +10,10 @@ if [ $# -ne 0 ]; then
 fi
 
 mkdir ~/luajit
-cd ~/luajit
+cd ~/luajit || exit 1
 git clone https://luajit.org/git/luajit.git ./repo
 mkdir ./build
-cd ./repo
+cd ./repo || exit 1
 make PREFIX=~/luajit/build
 make install PREFIX=~/luajit/build
-echo 'export PATH=$PATH:$HOME/luajit/build/bin' >> ~/.bashrc
+echo "export PATH=\$PATH:\$HOME/luajit/build/bin" >> ~/.bashrc
