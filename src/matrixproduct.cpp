@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <time.h>
@@ -11,8 +12,12 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
-// Initialize matrix
-// Print first elements
+struct Statistics
+{
+	double time = 0.0;
+	double mflops = 0.0;
+	long long values[2] = {0, 0};
+};
 
 double *init_array(int m, int n, bool fill)
 {
@@ -30,7 +35,7 @@ double *init_array(int m, int n, bool fill)
 	{
 		for (int j = 0; j < n; j++)
 		{
-			mat[i * n + j] = i + j + 1; // TODO(Process-ing): Check if value matters
+			mat[i * n + j] = i + j + 1;
 		}
 	}
 
@@ -45,216 +50,24 @@ void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
 		 << " seconds\n";
 }
 
-// Displays 10 elements of the result matrix to verify correctness
-void print_first_elems(double *mat, int n, int m)
+void print_first_elems(double *mat, int n)
 {
-	for (int j = 0; j < min(m, 10); j++)
+	for (int j = 0; j < min(10, n); j++)
 		cout << mat[j] << " ";
 	cout << endl;
 }
 
-double OnMult(int m_ar, int m_br, int m_cr)
+template <typename Function>
+Statistics timeFunc(Function function, int m, int n, int p)
 {
-	SYSTEMTIME Time1, Time2;
+	double *mat_A = init_array(m, p, true);
+	double *mat_B = init_array(p, n, true);
+	double *mat_C = init_array(m, n, false);
 
-	double temp;
-	int i, j, k;
-
-	double *pha, *phb, *phc;
-
-	// TODO(mm): Move to main? PAPI will start count here.
-	pha = init_array(m_ar, m_br, true);
-	phb = init_array(m_br, m_cr, true);
-	phc = init_array(m_ar, m_cr, false);
-
-	if (pha == NULL || phb == NULL || phc == NULL)
-		return -1.0;
-
-	Time1 = clock();
-
-	for (i = 0; i < m_ar; i++)
-	{
-		for (j = 0; j < m_cr; j++)
-		{
-			temp = 0;
-			for (k = 0; k < m_br; k++)
-				temp += pha[i * m_br + k] * phb[k * m_cr + j];
-			phc[i * m_cr + j] = temp;
-		}
-	}
-
-	Time2 = clock();
-	print_time_diff(Time1, Time2);
-
-	// TODO(Process-ing): Is this necessary?
-	cout << "Result matrix: " << endl;
-	print_first_elems(phc, m_ar, m_cr);
-
-	free(pha);
-	free(phb);
-	free(phc);
-
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
-}
-
-double OnMultLine(int m_ar, int m_br, int m_cr)
-{
-	SYSTEMTIME Time1, Time2;
-
-	double temp;
-	int i, j, k;
-
-	double *pha, *phb, *phc;
-
-	pha = init_array(m_ar, m_br, true);
-	phb = init_array(m_br, m_cr, true);
-	phc = init_array(m_ar, m_cr, false);
-
-	if (pha == NULL || phb == NULL || phc == NULL)
-		return -1.0;
-
-	Time1 = clock();
-
-	for (i = 0; i < m_ar; i++)
-	{
-		for (k = 0; k < m_br; k++)
-		{
-			// TODO (Process-ing): Remove temporary variable (maybe?)
-			for (j = 0; j < m_cr; j++)
-				phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
-		}
-	}
-
-	Time2 = clock();
-	print_time_diff(Time1, Time2);
-
-	// TODO(Process-ing): Is this necessary?
-	cout << "Result matrix: " << endl;
-	print_first_elems(phc, m_ar, m_cr);
-
-	free(pha);
-	free(phb);
-	free(phc);
-
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
-}
-
-double OnMultBlock(int m_ar, int m_br, int m_cr, int bkSize)
-{
-	SYSTEMTIME Time1, Time2;
-
-	double temp;
-	int I, J, K, i, j, k;
-
-	double *pha, *phb, *phc;
-
-	pha = init_array(m_ar, m_br, true);
-	phb = init_array(m_br, m_cr, true);
-	phc = init_array(m_ar, m_cr, false);
-
-	if (pha == NULL || phb == NULL || phc == NULL)
-		return -1.0;
-
-	Time1 = clock();
-
-	for (I = 0; I < m_ar; I += bkSize)
-	{
-		for (K = 0; K < m_br; K += bkSize)
-		{
-			for (J = 0; J < m_cr; J += bkSize)
-			{
-				for (i = I; i < min(I + bkSize, m_ar); i++)
-				{
-					for (k = K; k < min(K + bkSize, m_br); k++)
-					{
-						for (j = J; j < min(J + bkSize, m_cr); j++)
-						{
-							phc[i * m_cr + j] += pha[i * m_br + k] * phb[k * m_cr + j];
-						}
-					}
-				}
-			}
-		}
-	}
-
-	Time2 = clock();
-	print_time_diff(Time1, Time2);
-
-	cout << "Result matrix: " << endl;
-	print_first_elems(phc, m_ar, m_cr);
-
-	free(pha);
-	free(phb);
-	free(phc);
-
-	return (double)(Time2 - Time1) * 1000 / CLOCKS_PER_SEC; // in milliseconds
-}
-
-void handle_error(int retval)
-{
-	printf("PAPI error %d: %s\n", retval, PAPI_strerror(retval));
-	exit(1);
-}
-
-void init_papi()
-{
-	int retval = PAPI_library_init(PAPI_VER_CURRENT);
-	if (retval != PAPI_VER_CURRENT && retval < 0)
-	{
-		printf("PAPI library version mismatch!\n");
-		exit(1);
-	}
-	if (retval < 0)
-		handle_error(retval);
-
-	std::cout << "PAPI Version Number: MAJOR: " << PAPI_VERSION_MAJOR(retval)
-			  << " MINOR: " << PAPI_VERSION_MINOR(retval)
-			  << " REVISION: " << PAPI_VERSION_REVISION(retval) << "\n";
-}
-
-void printUsage(const string &programmName)
-{
-	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
-			  << "  <op> 		: Opration mode: 1, 2, 3 (required)" << endl
-			  << "  <lin>       : Number of lines (required)" << endl
-			  << "  <col>       : Number of columns (required)" << endl
-			  << "  <output>    : Path to output filename (required)" << endl
-			  << "  [blockSize] : Size of a block (optional)" << endl;
-}
-
-std::ofstream createFile(const string &fileName)
-{
-	namespace fs = std::filesystem;
-
-	if (fs::exists(fileName))
-	{
-		std::ofstream file(fileName, std::ios::out | std::ios::app);
-		return file;
-	}
-
-	std::ofstream file(fileName, std::ios::out | std::ios::app);
-	file << "OPERATION_MODE,LIN,COL,BLOCK_SIZE,TIME,L1 DCM,L2 DCM" << endl;
-	return file;
-}
-
-int main(int argc, char *argv[])
-{
-	if (argc < 5 || argc > 6)
-	{
-		printUsage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	int op = std::atoi(argv[1]);
-	// TODO(mm): matrix sizes?
-	int lin = std::atoi(argv[2]);
-	int col = std::atoi(argv[3]);
-	int blockSize = op == 3 ? std::atoi(argv[5]) : 0;
-	double time = 0.0;
-	std::ofstream file = createFile(argv[4]);
+	if (!mat_A || !mat_B || !mat_C)
+		return {-1.0, -1.0};
 
 	int EventSet = PAPI_NULL;
-	long long values[2];
 	int ret;
 
 	ret = PAPI_library_init(PAPI_VER_CURRENT);
@@ -277,37 +90,23 @@ int main(int argc, char *argv[])
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Start PAPI" << endl;
 
-	switch (op)
-	{
-	case 1:
-		time = OnMult(lin, col, lin);
-		break;
-	case 2:
-		time = OnMultLine(lin, col, lin);
-		break;
-	case 3:
-		time = OnMultBlock(lin, col, lin, blockSize);
-		break;
-	default:
-		printUsage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
+	Statistics statistics;
 
-	ret = PAPI_stop(EventSet, values);
+	SYSTEMTIME Time1 = clock();
+	function(mat_A, mat_B, mat_C);
+	SYSTEMTIME Time2 = clock();
+
+	print_time_diff(Time1, Time2);
+
+	cout << "Result matrix:";
+	print_first_elems(mat_C, m * n);
+
+	statistics.time = (double)(Time2 - Time1) / CLOCKS_PER_SEC;
+	statistics.mflops = (2.0 * m * n * p) / (statistics.time * 1e6);
+
+	ret = PAPI_stop(EventSet, statistics.values);
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Stop PAPI" << endl;
-
-	file << op << ','
-		 << lin << ','
-		 << col << ','
-		 << blockSize << ','
-		 << time << ','
-		 << values[0] << ','
-		 << values[1] << endl;
-
-	file.close();
-	printf("L1 DCM: %lld \n", values[0]);
-	printf("L2 DCM: %lld \n", values[1]);
 
 	ret = PAPI_reset(EventSet);
 	if (ret != PAPI_OK)
@@ -324,6 +123,145 @@ int main(int argc, char *argv[])
 	ret = PAPI_destroy_eventset(&EventSet);
 	if (ret != PAPI_OK)
 		std::cout << "FAIL destroy" << endl;
+
+	free(mat_A);
+	free(mat_B);
+	free(mat_C);
+
+	return statistics;
+}
+
+Statistics OnMult(int m, int n, int p)
+{
+	double temp;
+	int i, j, k;
+
+	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	{
+		for (i = 0; i < m; i++)
+		{
+			for (j = 0; j < p; j++)
+			{
+				temp = 0;
+				for (k = 0; k < n; k++)
+					temp += mat_A[i * n + k] * mat_B[k * p + j];
+				mat_C[i * p + j] = temp;
+			}
+		}
+	};
+
+	return timeFunc(execMult, m, n, p);
+}
+
+Statistics OnMultLine(int m, int n, int p)
+{
+	int i, j, k;
+
+	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	{
+		for (i = 0; i < m; i++)
+		{
+			for (k = 0; k < n; k++)
+			{
+				for (j = 0; j < p; j++)
+					mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+			}
+		}
+	};
+
+	return timeFunc(execMult, m, n, p);
+}
+
+Statistics OnMultBlock(int m, int n, int p, int bkSize)
+{
+	int I, J, K, i, j, k;
+
+	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	{
+		for (I = 0; I < m; I += bkSize)
+		{
+			for (K = 0; K < n; K += bkSize)
+			{
+				for (J = 0; J < p; J += bkSize)
+				{
+					for (i = I; i < min(I + bkSize, m); i++)
+					{
+						for (k = K; k < min(K + bkSize, n); k++)
+						{
+							for (j = J; j < min(J + bkSize, p); j++)
+							{
+								mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+
+	return timeFunc(execMult, m, n, p);
+}
+
+void printUsage(const string &programmName)
+{
+	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
+			  << "  <op>        : Opration mode: 1, 2, 3 (required)" << endl
+			  << "  <size>      : Size of matrix (required)" << endl
+			  << "  <output>    : Output filename (required)" << endl
+			  << "  [blockSize] : Size of a block (optional)" << endl;
+}
+
+std::ofstream createFile(const string &fileName)
+{
+	bool fileExists = std::filesystem::exists(fileName);
+	std::ofstream file(fileName, std::ios::out | std::ios::app);
+
+	if (!fileExists)
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << std::endl;
+
+	return file;
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc < 4 || argc > 5)
+	{
+		printUsage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	int op = std::atoi(argv[1]);
+	int size = std::atoi(argv[2]);
+	std::ofstream file = createFile(argv[3]);
+	int blockSize = op == 3 ? std::atoi(argv[4]) : 0;
+	Statistics statistics;
+
+	switch (op)
+	{
+	case 1:
+		statistics = OnMult(size, size, size);
+		break;
+	case 2:
+		statistics = OnMultLine(size, size, size);
+		break;
+	case 3:
+		statistics = OnMultBlock(size, size, size, blockSize);
+		break;
+	default:
+		printUsage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	file << op << ','
+		 << size << ','
+		 << blockSize << ','
+		 << statistics.time << ','
+		 << statistics.values[0] << ','
+		 << statistics.values[1] << ','
+		 << statistics.mflops
+		 << endl;
+
+	file.close();
 
 	return 0;
 }
