@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <papi.h>
 #include <cstring>
+#include <limits>
 
 using namespace std;
 
@@ -28,7 +29,8 @@ double *init_array(int m, int n, bool fill)
 		return NULL;
 	}
 
-	if (!fill) {
+	if (!fill)
+	{
 		memset(mat, 0, m * n * sizeof(double));
 		return mat;
 	}
@@ -66,19 +68,19 @@ int setup_papi()
 
 	ret = PAPI_library_init(PAPI_VER_CURRENT);
 	if (ret != PAPI_VER_CURRENT)
-		std::cout << "FAIL" << endl;
+		cout << "FAIL" << endl;
 
 	ret = PAPI_create_eventset(&event_set);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: create eventset" << endl;
+		cout << "ERROR: create eventset" << endl;
 
 	ret = PAPI_add_event(event_set, PAPI_L1_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L1_DCM" << endl;
+		cout << "ERROR: PAPI_L1_DCM" << endl;
 
 	ret = PAPI_add_event(event_set, PAPI_L2_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L2_DCM" << endl;
+		cout << "ERROR: PAPI_L2_DCM" << endl;
 
 	return event_set;
 }
@@ -88,15 +90,15 @@ void cleanup_papi(int *event_set)
 	int ret;
 	ret = PAPI_remove_event(*event_set, PAPI_L1_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
+		cout << "FAIL remove event" << endl;
 
 	ret = PAPI_remove_event(*event_set, PAPI_L2_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
+		cout << "FAIL remove event" << endl;
 
 	ret = PAPI_destroy_eventset(event_set);
 	if (ret != PAPI_OK)
-		std::cout << "FAIL destroy" << endl;
+		cout << "FAIL destroy" << endl;
 }
 
 template <typename Function>
@@ -106,13 +108,14 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 
 	ret = PAPI_start(event_set);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: Start PAPI" << endl;
+		cout << "ERROR: Start PAPI" << endl;
 
 	double *mat_a = init_array(m, p, true);
 	double *mat_b = init_array(p, n, true);
 	double *mat_c = init_array(m, n, false);
 
-	if (!mat_a || !mat_b || !mat_b) {
+	if (!mat_a || !mat_b || !mat_b)
+	{
 		stats->time = -1.0;
 		stats->mflops = -1.0;
 		memset(stats->values, 0, sizeof(stats->values));
@@ -132,11 +135,11 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 
 	ret = PAPI_stop(event_set, stats->values);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: Stop PAPI" << endl;
+		cout << "ERROR: Stop PAPI" << endl;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
-		std::cout << "FAIL reset" << endl;
+		cout << "FAIL reset" << endl;
 
 	free(mat_a);
 	free(mat_b);
@@ -216,63 +219,42 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 
 void print_usage(const string &program_name)
 {
-	std::cout << "Usage: " << program_name << " <op> <size> <output> [block-size]" << endl
-			  << "  <op>         : Operation mode: 1, 2, 3 (required)" << endl
-			  << "  <size>       : Size of matrix (required)" << endl
-			  << "  <output>     : Output filename (required)" << endl
-			  << "  [block-size] : Size of a block (optional)" << endl;
+	cout << "Usage: " << program_name << " <op> <size> <output> [block-size]" << endl
+		 << "  <op>         : Operation mode: 1, 2, 3 (required)" << endl
+		 << "  <size>       : Size of matrix (required)" << endl
+		 << "  <output>     : Output filename (required)" << endl
+		 << "  [block-size] : Size of a block (optional)" << endl;
 }
 
-std::ofstream create_file(const string &file_name)
+ofstream create_file(const string &file_name)
 {
-	bool file_exists = std::ifstream(file_name).good();
-	std::ofstream file(file_name, std::ios::out | std::ios::app);
+	bool file_exists = ifstream(file_name).good();
+	ofstream file(file_name, ios::out | ios::app);
 
 	if (!file_exists)
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << std::endl;
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
 
 	return file;
 }
 
-int main(int argc, char *argv[])
+int execute_operation(int op, int size, int block_size, ofstream &file, int event_set)
 {
-	if (argc < 4)
-	{
-		print_usage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	int op = std::atoi(argv[1]);
-	if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
-	{
-		print_usage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	int size = std::atoi(argv[2]);
-	std::ofstream file = create_file(argv[3]);
-	int block_size = op == 3 ? std::atoi(argv[4]) : 0;
-
 	Statistics stats;
-	int event_set = setup_papi();
 
 	switch (op)
 	{
-	case 1:
-		on_mult(size, size, size, event_set, &stats);
-		break;
-	case 2:
-		on_mult_line(size, size, size, event_set, &stats);
-		break;
-	case 3:
-		on_mult_block(size, size, size, block_size, event_set, &stats);
-		break;
-	default:
-		print_usage(argv[0]);
-		exit(EXIT_FAILURE);
+		case 1:
+			on_mult(size, size, size, event_set, &stats);
+			break;
+		case 2:
+			on_mult_line(size, size, size, event_set, &stats);
+			break;
+		case 3:
+			on_mult_block(size, size, size, block_size, event_set, &stats);
+			break;
+		default:
+			return 1;
 	}
-
-	cleanup_papi(&event_set);
 
 	file << op << ','
 		 << size << ','
@@ -283,7 +265,72 @@ int main(int argc, char *argv[])
 		 << stats.mflops
 		 << endl;
 
-	file.close();
+	return 0;
+}
+
+template <typename T>
+int safe_get_cin(T &var, const string &error_message) {
+	if (cin >> var)
+		return 0;
+
+	if (cin.eof())
+		exit(EXIT_SUCCESS);
+
+	cout << error_message << endl;
+	cin.clear();
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	return 1;
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc < 4)
+	{
+		print_usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	int op = atoi(argv[1]);
+	if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+	{
+		print_usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	int size = atoi(argv[2]);
+	ofstream file = create_file(argv[3]);
+	int block_size = op == 3 ? atoi(argv[4]) : 0;
+
+	int event_set = setup_papi();
+
+	while (true) {
+		cout << "\n1. Multiplication\n"
+			 << "2. Line Multiplication\n"
+			 << "3. Block Multiplication\n"
+			 << "0. Exit\n"
+			 << "Operation ? " << flush;
+
+		if (safe_get_cin(op, "Invalid operation") != 0)
+			continue;
+		if (op == 0)
+			break;
+
+		cout << "Size: lins=cols ? ";
+   		if (safe_get_cin(size, "Invalid size") != 0)
+			continue;
+
+		if (op == 3)
+		{
+			cout << "Block size ? ";
+			if (safe_get_cin(block_size, "Invalid block size") != 0)
+				continue;
+		}
+
+		if (execute_operation(op, size, block_size, file, event_set) != 0)
+			exit(EXIT_FAILURE);
+	}
+
+	cleanup_papi(&event_set);
 
 	return 0;
 }
