@@ -21,15 +21,17 @@ struct Statistics
 
 double *init_array(int m, int n, bool fill)
 {
-	double *mat = (double *)calloc(m * n, sizeof(double));
+	double *mat = (double *)malloc(m * n * sizeof(double));
 	if (mat == NULL)
 	{
 		perror("Error in init_array");
 		return NULL;
 	}
 
-	if (!fill)
+	if (!fill) {
+		memset(mat, 0, m * n * sizeof(double));
 		return mat;
+	}
 
 	for (int i = 0; i < m; i++)
 	{
@@ -98,8 +100,10 @@ void cleanup_papi(int *event_set)
 }
 
 template <typename Function>
-void measure_exec(Function function, int m, int n, int p, Statistics *stats)
+void measure_exec(Function function, int m, int n, int p, int event_set, Statistics *stats)
 {
+	int ret;
+
 	ret = PAPI_start(event_set);
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Start PAPI" << endl;
@@ -124,7 +128,7 @@ void measure_exec(Function function, int m, int n, int p, Statistics *stats)
 	print_first_elems(mat_c, p);
 
 	stats->time = (double)(tf - ti) / CLOCKS_PER_SEC;
-	stats->mflops = (2.0 * m * n * p) / (stats.time * 1e6);
+	stats->mflops = (2.0 * m * n * p) / (stats->time * 1e6);
 
 	ret = PAPI_stop(event_set, stats->values);
 	if (ret != PAPI_OK)
@@ -139,7 +143,7 @@ void measure_exec(Function function, int m, int n, int p, Statistics *stats)
 	free(mat_c);
 }
 
-void on_mult(int m, int n, int p, Statistics *stats)
+void on_mult(int m, int n, int p, int event_set, Statistics *stats)
 {
 	double temp;
 	int i, j, k;
@@ -158,10 +162,10 @@ void on_mult(int m, int n, int p, Statistics *stats)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p, stats);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-void on_mult_line(int m, int n, int p, Statistics *stats)
+void on_mult_line(int m, int n, int p, int event_set, Statistics *stats)
 {
 	int i, j, k;
 
@@ -177,10 +181,10 @@ void on_mult_line(int m, int n, int p, Statistics *stats)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p, stats);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-void on_mult_block(int m, int n, int p, int block_size, Statistics *stats)
+void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics *stats)
 {
 	int I, J, K, i, j, k;
 
@@ -207,7 +211,7 @@ void on_mult_block(int m, int n, int p, int block_size, Statistics *stats)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p, stats);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
 void print_usage(const string &program_name)
@@ -255,13 +259,13 @@ int main(int argc, char *argv[])
 	switch (op)
 	{
 	case 1:
-		on_mult(size, size, size, &stats);
+		on_mult(size, size, size, event_set, &stats);
 		break;
 	case 2:
-		on_mult_line(size, size, size, &stats);
+		on_mult_line(size, size, size, event_set, &stats);
 		break;
 	case 3:
-		on_mult_block(size, size, size, block_size, &stats);
+		on_mult_block(size, size, size, block_size, event_set, &stats);
 		break;
 	default:
 		print_usage(argv[0]);
