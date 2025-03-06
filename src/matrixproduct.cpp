@@ -118,7 +118,7 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	{
 		stats.time = -1.0;
 		stats.mflops = -1.0;
-		memset(stats->values, 0, sizeof(stats->values));
+		memset(stats.values, 0, sizeof(stats.values));
 	}
 
 	SYSTEMTIME ti = clock();
@@ -131,11 +131,14 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	print_first_elems(mat_c, p);
 
 	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
-	stats.mflops = (2.0 * m * n * p) / (stats->time * 1e6);
+	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
+
+	cout << "L1 DCM: " << stats.values[0] << '\n'
+		 << "L2 DCM: " << stats.values[1] << endl;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -219,11 +222,11 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 
 void print_usage(const string &program_name)
 {
-	cout << "Usage: " << program_name << " <op> <size> <output> [block-size]" << endl
-		 << "  <op>         : Operation mode: 1, 2, 3 (required)" << endl
-		 << "  <size>       : Size of matrix (required)" << endl
-		 << "  <output>     : Output filename (required)" << endl
-		 << "  [block-size] : Size of a block (optional)" << endl;
+	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [block-size])]\n"
+		 << "  <op>          : Operation mode: 1, 2, 3 (required)\n"
+		 << "  <size>        : Size of matrix (required)\n"
+		 << "  <output-file> : Output filename (required)\n"
+		 << "  [block-size]  : Size of a block (optional)" << endl;
 }
 
 ofstream create_file(const string &file_name)
@@ -284,50 +287,89 @@ int safe_get_cin(T &var, const string &error_message) {
 
 int main(int argc, char *argv[])
 {
-	if (argc < 4)
+	if (argc < 2)
 	{
 		print_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	int op = atoi(argv[1]);
-	if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+	ofstream file = create_file(argv[1]);
+	if (!file.is_open())
 	{
-		print_usage(argv[0]);
+		perror("Error opening file");
 		exit(EXIT_FAILURE);
 	}
 
-	int size = atoi(argv[2]);
-	ofstream file = create_file(argv[3]);
-	int block_size = op == 3 ? atoi(argv[4]) : 0;
-
+	int op, size, block_size;
 	int event_set = setup_papi();
 
-	while (true) {
-		cout << "\n1. Multiplication\n"
-			 << "2. Line Multiplication\n"
-			 << "3. Block Multiplication\n"
-			 << "0. Exit\n"
-			 << "Operation ? " << flush;
+	if (argc >= 3) {
+		char *endptr;
 
-		if (safe_get_cin(op, "Invalid operation") != 0)
-			continue;
-		if (op == 0)
-			break;
+		op = strtol(argv[2], &endptr, 10);
+		if (endptr == argv[2] || op < 0 || op > 3)
+		{
+			cout << "Invalid operation" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
 
-		cout << "Size: lins=cols ? ";
-   		if (safe_get_cin(size, "Invalid size") != 0)
-			continue;
+		if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+		{
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		size = strtol(argv[3], &endptr, 10);
+		if (endptr == argv[3] || size <= 0)
+		{
+			cout << "Invalid size" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
 
 		if (op == 3)
 		{
-			cout << "Block size ? ";
-			if (safe_get_cin(block_size, "Invalid block size") != 0)
-				continue;
+			block_size = strtol(argv[4], &endptr, 10);
+			if (endptr == argv[4] || block_size <= 0)
+			{
+				cout << "Invalid block size" << endl;
+				print_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		if (execute_operation(op, size, block_size, file, event_set) != 0)
 			exit(EXIT_FAILURE);
+
+	} else {
+
+		while (true) {
+			cout << "\n1. Multiplication\n"
+				<< "2. Line Multiplication\n"
+				<< "3. Block Multiplication\n"
+				<< "0. Exit\n"
+				<< "Operation ? " << flush;
+
+			if (safe_get_cin(op, "Invalid operation") != 0)
+				continue;
+			if (op == 0)
+				break;
+
+			cout << "Size: lins=cols ? ";
+			if (safe_get_cin(size, "Invalid size") != 0)
+				continue;
+
+			if (op == 3)
+			{
+				cout << "Block size ? ";
+				if (safe_get_cin(block_size, "Invalid block size") != 0)
+					continue;
+			}
+
+			if (execute_operation(op, size, block_size, file, event_set) != 0)
+				exit(EXIT_FAILURE);
+		}
 	}
 
 	cleanup_papi(event_set);
