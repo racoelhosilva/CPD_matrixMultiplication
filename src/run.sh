@@ -25,9 +25,9 @@ for size in $(seq 600 400 3000) $(seq 4096 2048 10240); do
 done
 
 for size in $(seq 600 400 3000); do
-    luajit matrixproduct.lua 1 "$size" "output/test-lua-1-${size}x${size}.csv"
+    luajit matrixproduct.lua "output/test-lua-1-${size}.csv" 1 "$size"
 done
 
 for size in $(seq 600 400 3000); do
-    luajit matrixproduct.lua 2 "$size" "output/test-lua-2-${size}x${size}.csv"
+    luajit matrixproduct.lua "output/test-lua-2-${size}.csv" 2 "$size"
 done
