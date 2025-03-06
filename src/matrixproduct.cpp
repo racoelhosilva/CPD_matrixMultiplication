@@ -49,7 +49,7 @@ void print_time_diff(double ti, double tf)
 {
 	cout << "Time: "
 		 << fixed << setw(3) << setprecision(3)
-		 << (double)(tf - ti)
+		 << tf - ti
 		 << " seconds\n";
 }
 
@@ -133,7 +133,7 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = (double)(tf - ti);
+	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
