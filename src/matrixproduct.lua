@@ -142,57 +142,63 @@ local function main()
 
     local op, size
     if #arg >= 2 then
-        if #arg == 3 then
+        if #arg ~= 3 then
             print_usage()
             return
         end
 
         op = tonumber(arg[2])
+        if op == nil or (op ~= 1 and op ~= 2) then
+            print_usage()
+            return
+        end
+
         size = tonumber(arg[3])
-        if op == nil or size == nil or not (op ~= 2 and op ~= 3) or not is_integer(size) then
+        if size == nil or not is_integer(size) then
             print_usage()
             return
         end
 
         execute_operation(op, size, file)
-    end
 
-    while true do
-        print()
-        print("1. Multiplication")
-        print("2. Line Multiplication")
-        print("0. Exit")
-        io.write("Operation ? ")
+    else
+        while true do
+            print()
+            print("1. Multiplication")
+            print("2. Line Multiplication")
+            print("0. Exit")
+            io.write("Operation ? ")
 
-        op = io.read()
-        if op == nil then
-            break
+            op = io.read()
+            if op == nil then
+                break
+            end
+
+            op = tonumber(op)
+            if op == nil or (op ~= 1 and op ~= 2 and op ~= 0) then
+                print("Invalid option")
+                goto continue
+            end
+            if op == 0 then
+                break
+            end
+
+            io.write("Matrix size ? ")
+            size = io.read()
+            if size == nil then
+                break
+            end
+
+            size = tonumber(size)
+            if size == nil or not is_integer(size) or size <= 0 then
+                print("Invalid size")
+                goto continue
+            end
+
+            execute_operation(op, size, file)
+
+            ::continue::
         end
-
-        op = tonumber(op)
-        if op == nil or not (op == 1 or op == 2 or op == 0) then
-            print("Invalid option")
-            goto continue
-        end
-        if op == 0 then
-            break
-        end
-
-        io.write("Matrix size ? ")
-        size = io.read()
-        if size == nil then
-            break
-        end
-
-        size = tonumber(size)
-        if size == nil or not is_integer(size) or size <= 0 then
-            print("Invalid size")
-            goto continue
-        end
-
-        execute_operation(op, size, file)
-
-        ::continue::
     end
 
     file:close()
