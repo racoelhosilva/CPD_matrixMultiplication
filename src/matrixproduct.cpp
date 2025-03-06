@@ -106,10 +106,6 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 {
 	int ret;
 
-	ret = PAPI_start(event_set);
-	if (ret != PAPI_OK)
-		cout << "ERROR: Start PAPI" << endl;
-
 	double *mat_a = init_array(m, p, true);
 	double *mat_b = init_array(p, n, true);
 	double *mat_c = init_array(m, n, false);
@@ -121,9 +117,17 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 		memset(stats.values, 0, sizeof(stats.values));
 	}
 
+	ret = PAPI_start(event_set);
+	if (ret != PAPI_OK)
+		cout << "ERROR: Start PAPI" << endl;
+
 	SYSTEMTIME ti = clock();
 	function(mat_a, mat_b, mat_c);
 	SYSTEMTIME tf = clock();
+
+	ret = PAPI_stop(event_set, stats.values);
+	if (ret != PAPI_OK)
+		cout << "ERROR: Stop PAPI" << endl;
 
 	print_time_diff(ti, tf);
 
@@ -132,10 +136,6 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 
 	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
-
-	ret = PAPI_stop(event_set, stats.values);
-	if (ret != PAPI_OK)
-		cout << "ERROR: Stop PAPI" << endl;
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
 		 << "L2 DCM: " << stats.values[1] << endl;
