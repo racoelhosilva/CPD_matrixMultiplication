@@ -8,10 +8,9 @@
 #include <papi.h>
 #include <cstring>
 #include <limits>
+#include <omp.h>
 
 using namespace std;
-
-#define SYSTEMTIME clock_t
 
 struct Statistics
 {
@@ -46,11 +45,11 @@ double *init_array(int m, int n, bool fill)
 	return mat;
 }
 
-void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
+void print_time_diff(double ti, double tf)
 {
 	cout << "Time: "
 		 << fixed << setw(3) << setprecision(3)
-		 << (double)(tf - ti) / CLOCKS_PER_SEC
+		 << tf - ti
 		 << " seconds\n";
 }
 
@@ -121,9 +120,9 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	if (ret != PAPI_OK)
 		cout << "ERROR: Start PAPI" << endl;
 
-	SYSTEMTIME ti = clock();
+	double ti = omp_get_wtime();
 	function(mat_a, mat_b, mat_c);
-	SYSTEMTIME tf = clock();
+	double tf = omp_get_wtime();
 
 	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
@@ -134,7 +133,7 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
@@ -192,21 +191,24 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 
 void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics &stats)
 {
-	int I, J, K, i, j, k;
+	int I, J, K, I_end, J_end, K_end, i, j, k;
 
 	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
 		for (I = 0; I < m; I += block_size)
 		{
+			I_end = min(I + block_size, m);
 			for (K = 0; K < n; K += block_size)
 			{
+				K_end = min(K + block_size, n);
 				for (J = 0; J < p; J += block_size)
 				{
-					for (i = I; i < min(I + block_size, m); i++)
+					J_end = min(J + block_size, p);
+					for (i = I; i < I_end; i++)
 					{
-						for (k = K; k < min(K + block_size, n); k++)
+						for (k = K; k < K_end; k++)
 						{
-							for (j = J; j < min(J + block_size, p); j++)
+							for (j = J; j < J_end; j++)
 							{
 								mat_c[i * p + j] += mat_a[i * n + k] * mat_b[k * p + j];
 							}
@@ -220,11 +222,54 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
+
+void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &stats)
+{
+	
+	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
+	{
+		int i, j, k;
+		#pragma omp parallel for private(i, k, j)
+		for (i = 0; i < m; i++)
+		{
+			for (k = 0; k < n; k++)
+			{
+				for (j = 0; j < p; j++)
+					mat_c[i * p + j] += mat_a[i * n + k] * mat_b[k * p + j];
+			}
+		}
+	};
+
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
+}
+
+void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &stats)
+{
+	
+	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
+	{
+		int i, j, k;
+		
+		#pragma omp parallel private(i, k)
+		for (i = 0; i < m; i++)
+		{
+			for (k = 0; k < n; k++)
+			{
+				#pragma omp for private(j)
+				for (j = 0; j < p; j++)
+					mat_c[i * p + j] += mat_a[i * n + k] * mat_b[k * p + j];
+			}
+		}
+	};
+
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
+}
+
 void print_usage(const string &program_name)
 {
 	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [<block-size>])]\n"
 		 << "  <output-file> : Output filename\n"
-		 << "  <op>          : Operation mode: 1, 2, 3\n"
+		 << "  <op>          : Operation mode: 1, 2, 3, 4, 5\n"
 		 << "  <size>        : Size of matrix\n"
 		 << "  <block-size>  : Size of a block" << endl;
 }
@@ -254,6 +299,12 @@ int execute_operation(int op, int size, int block_size, ofstream &file, int even
 			break;
 		case 3:
 			on_mult_block(size, size, size, block_size, event_set, stats);
+			break;
+		case 4:
+			on_mult_line_parallel_1(size, size, size, event_set, stats);
+			break;
+		case 5:
+			on_mult_line_parallel_2(size, size, size, event_set, stats);
 			break;
 		default:
 			return 1;
@@ -300,14 +351,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	int op, size, block_size;
+	int op, size, block_size = 0;
 	int event_set = setup_papi();
 
 	if (argc >= 3) {
 		char *endptr;
 
 		op = strtol(argv[2], &endptr, 10);
-		if (endptr == argv[2] || op < 0 || op > 3)
+		if (endptr == argv[2] || op < 0 || op > 5)
 		{
 			cout << "Invalid operation" << endl;
 			print_usage(argv[0]);
@@ -348,6 +399,8 @@ int main(int argc, char *argv[])
 			cout << "\n1. Multiplication\n"
 				<< "2. Line Multiplication\n"
 				<< "3. Block Multiplication\n"
+				<< "4. Line Multiplication Parallel 1\n"
+				<< "5. Line Multiplication Parallel 2\n"
 				<< "0. Exit\n"
 				<< "Operation ? " << flush;
 
