@@ -223,10 +223,10 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 void print_usage(const string &program_name)
 {
 	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [<block-size>])]\n"
-		 << "  <op>          : Operation mode: 1, 2, 3 (required)\n"
-		 << "  <size>        : Size of matrix (required)\n"
-		 << "  <output-file> : Output filename (required)\n"
-		 << "  <block-size>  : Size of a block (optional)" << endl;
+		 << "  <output-file> : Output filename\n"
+		 << "  <op>          : Operation mode: 1, 2, 3\n"
+		 << "  <size>        : Size of matrix\n"
+		 << "  <block-size>  : Size of a block" << endl;
 }
 
 ofstream create_file(const string &file_name)
