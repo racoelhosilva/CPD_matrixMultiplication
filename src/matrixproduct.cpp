@@ -6,7 +6,8 @@
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
-#include <filesystem>
+#include <cstring>
+#include <limits>
 
 using namespace std;
 
@@ -21,7 +22,7 @@ struct Statistics
 
 double *init_array(int m, int n, bool fill)
 {
-	double *mat = (double *)calloc(m * n, sizeof(double));
+	double *mat = (double *)malloc(m * n * sizeof(double));
 	if (mat == NULL)
 	{
 		perror("Error in init_array");
@@ -29,7 +30,10 @@ double *init_array(int m, int n, bool fill)
 	}
 
 	if (!fill)
+	{
+		memset(mat, 0, m * n * sizeof(double));
 		return mat;
+	}
 
 	for (int i = 0; i < m; i++)
 	{
@@ -52,91 +56,105 @@ void print_time_diff(SYSTEMTIME ti, SYSTEMTIME tf)
 
 void print_first_elems(double *mat, int n)
 {
-	for (int j = 0; j < min(10, n); j++)
+	for (int j = 0; j < min(n, 10); j++)
 		cout << mat[j] << " ";
 	cout << endl;
 }
 
-template <typename Function>
-Statistics timeFunc(Function function, int m, int n, int p)
+int setup_papi()
 {
-	double *mat_A = init_array(m, p, true);
-	double *mat_B = init_array(p, n, true);
-	double *mat_C = init_array(m, n, false);
-
-	if (!mat_A || !mat_B || !mat_C)
-		return {-1.0, -1.0};
-
-	int EventSet = PAPI_NULL;
+	int event_set = PAPI_NULL;
 	int ret;
 
 	ret = PAPI_library_init(PAPI_VER_CURRENT);
 	if (ret != PAPI_VER_CURRENT)
-		std::cout << "FAIL" << endl;
+		cout << "FAIL" << endl;
 
-	ret = PAPI_create_eventset(&EventSet);
+	ret = PAPI_create_eventset(&event_set);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: create eventset" << endl;
+		cout << "ERROR: create eventset" << endl;
 
-	ret = PAPI_add_event(EventSet, PAPI_L1_DCM);
+	ret = PAPI_add_event(event_set, PAPI_L1_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L1_DCM" << endl;
+		cout << "ERROR: PAPI_L1_DCM" << endl;
 
-	ret = PAPI_add_event(EventSet, PAPI_L2_DCM);
+	ret = PAPI_add_event(event_set, PAPI_L2_DCM);
 	if (ret != PAPI_OK)
-		std::cout << "ERROR: PAPI_L2_DCM" << endl;
+		cout << "ERROR: PAPI_L2_DCM" << endl;
 
-	ret = PAPI_start(EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: Start PAPI" << endl;
-
-	Statistics statistics;
-
-	SYSTEMTIME Time1 = clock();
-	function(mat_A, mat_B, mat_C);
-	SYSTEMTIME Time2 = clock();
-
-	print_time_diff(Time1, Time2);
-
-	cout << "Result matrix:";
-	print_first_elems(mat_C, m * n);
-
-	statistics.time = (double)(Time2 - Time1) / CLOCKS_PER_SEC;
-	statistics.mflops = (2.0 * m * n * p) / (statistics.time * 1e6);
-
-	ret = PAPI_stop(EventSet, statistics.values);
-	if (ret != PAPI_OK)
-		std::cout << "ERROR: Stop PAPI" << endl;
-
-	ret = PAPI_reset(EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL reset" << endl;
-
-	ret = PAPI_remove_event(EventSet, PAPI_L1_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
-
-	ret = PAPI_remove_event(EventSet, PAPI_L2_DCM);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL remove event" << endl;
-
-	ret = PAPI_destroy_eventset(&EventSet);
-	if (ret != PAPI_OK)
-		std::cout << "FAIL destroy" << endl;
-
-	free(mat_A);
-	free(mat_B);
-	free(mat_C);
-
-	return statistics;
+	return event_set;
 }
 
-Statistics OnMult(int m, int n, int p)
+void cleanup_papi(int &event_set)
+{
+	int ret;
+	ret = PAPI_remove_event(event_set, PAPI_L1_DCM);
+	if (ret != PAPI_OK)
+		cout << "FAIL remove event" << endl;
+
+	ret = PAPI_remove_event(event_set, PAPI_L2_DCM);
+	if (ret != PAPI_OK)
+		cout << "FAIL remove event" << endl;
+
+	ret = PAPI_destroy_eventset(&event_set);
+	if (ret != PAPI_OK)
+		cout << "FAIL destroy" << endl;
+}
+
+template <typename Function>
+void measure_exec(Function function, int m, int n, int p, int event_set, Statistics &stats)
+{
+	int ret;
+
+	double *mat_a = init_array(m, p, true);
+	double *mat_b = init_array(p, n, true);
+	double *mat_c = init_array(m, n, false);
+
+	if (!mat_a || !mat_b || !mat_b)
+	{
+		stats.time = -1.0;
+		stats.mflops = -1.0;
+		memset(stats.values, 0, sizeof(stats.values));
+	}
+
+	ret = PAPI_start(event_set);
+	if (ret != PAPI_OK)
+		cout << "ERROR: Start PAPI" << endl;
+
+	SYSTEMTIME ti = clock();
+	function(mat_a, mat_b, mat_c);
+	SYSTEMTIME tf = clock();
+
+	ret = PAPI_stop(event_set, stats.values);
+	if (ret != PAPI_OK)
+		cout << "ERROR: Stop PAPI" << endl;
+
+	print_time_diff(ti, tf);
+
+	cout << "Result matrix: ";
+	print_first_elems(mat_c, p);
+
+	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
+
+	cout << "L1 DCM: " << stats.values[0] << '\n'
+		 << "L2 DCM: " << stats.values[1] << endl;
+
+	ret = PAPI_reset(event_set);
+	if (ret != PAPI_OK)
+		cout << "FAIL reset" << endl;
+
+	free(mat_a);
+	free(mat_b);
+	free(mat_c);
+}
+
+void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 {
 	double temp;
 	int i, j, k;
 
-	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
 		for (i = 0; i < m; i++)
 		{
@@ -144,53 +162,53 @@ Statistics OnMult(int m, int n, int p)
 			{
 				temp = 0;
 				for (k = 0; k < n; k++)
-					temp += mat_A[i * n + k] * mat_B[k * p + j];
-				mat_C[i * p + j] = temp;
+					temp += mat_a[i * n + k] * mat_b[k * p + j];
+				mat_c[i * p + j] = temp;
 			}
 		}
 	};
 
-	return timeFunc(execMult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-Statistics OnMultLine(int m, int n, int p)
+void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 {
 	int i, j, k;
 
-	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
 		for (i = 0; i < m; i++)
 		{
 			for (k = 0; k < n; k++)
 			{
 				for (j = 0; j < p; j++)
-					mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+					mat_c[i * p + j] += mat_a[i * n + k] * mat_b[k * p + j];
 			}
 		}
 	};
 
-	return timeFunc(execMult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-Statistics OnMultBlock(int m, int n, int p, int bkSize)
+void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics &stats)
 {
 	int I, J, K, i, j, k;
 
-	auto execMult = [&](double *mat_A, double *mat_B, double *mat_C)
+	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
-		for (I = 0; I < m; I += bkSize)
+		for (I = 0; I < m; I += block_size)
 		{
-			for (K = 0; K < n; K += bkSize)
+			for (K = 0; K < n; K += block_size)
 			{
-				for (J = 0; J < p; J += bkSize)
+				for (J = 0; J < p; J += block_size)
 				{
-					for (i = I; i < min(I + bkSize, m); i++)
+					for (i = I; i < min(I + block_size, m); i++)
 					{
-						for (k = K; k < min(K + bkSize, n); k++)
+						for (k = K; k < min(K + block_size, n); k++)
 						{
-							for (j = J; j < min(J + bkSize, p); j++)
+							for (j = J; j < min(J + block_size, p); j++)
 							{
-								mat_C[i * p + j] += mat_A[i * n + k] * mat_B[k * p + j];
+								mat_c[i * p + j] += mat_a[i * n + k] * mat_b[k * p + j];
 							}
 						}
 					}
@@ -199,69 +217,162 @@ Statistics OnMultBlock(int m, int n, int p, int bkSize)
 		}
 	};
 
-	return timeFunc(execMult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-void printUsage(const string &programmName)
+void print_usage(const string &program_name)
 {
-	std::cout << "Usage: " << programmName << " <op> <lin> <col> <output> [blockSize]" << endl
-			  << "  <op>        : Opration mode: 1, 2, 3 (required)" << endl
-			  << "  <size>      : Size of matrix (required)" << endl
-			  << "  <output>    : Output filename (required)" << endl
-			  << "  [blockSize] : Size of a block (optional)" << endl;
+	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [<block-size>])]\n"
+		 << "  <output-file> : Output filename\n"
+		 << "  <op>          : Operation mode: 1, 2, 3\n"
+		 << "  <size>        : Size of matrix\n"
+		 << "  <block-size>  : Size of a block" << endl;
 }
 
-std::ofstream createFile(const string &fileName)
+ofstream create_file(const string &file_name)
 {
-	bool fileExists = std::filesystem::exists(fileName);
-	std::ofstream file(fileName, std::ios::out | std::ios::app);
+	bool file_exists = ifstream(file_name).good();
+	ofstream file(file_name, ios::out | ios::app);
 
-	if (!fileExists)
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << std::endl;
+	if (!file_exists)
+		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
 
 	return file;
 }
 
-int main(int argc, char *argv[])
+int execute_operation(int op, int size, int block_size, ofstream &file, int event_set)
 {
-	if (argc < 4 || argc > 5)
-	{
-		printUsage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	int op = std::atoi(argv[1]);
-	int size = std::atoi(argv[2]);
-	std::ofstream file = createFile(argv[3]);
-	int blockSize = op == 3 ? std::atoi(argv[4]) : 0;
-	Statistics statistics;
+	Statistics stats;
 
 	switch (op)
 	{
-	case 1:
-		statistics = OnMult(size, size, size);
-		break;
-	case 2:
-		statistics = OnMultLine(size, size, size);
-		break;
-	case 3:
-		statistics = OnMultBlock(size, size, size, blockSize);
-		break;
-	default:
-		printUsage(argv[0]);
-		exit(EXIT_FAILURE);
+		case 1:
+			on_mult(size, size, size, event_set, stats);
+			break;
+		case 2:
+			on_mult_line(size, size, size, event_set, stats);
+			break;
+		case 3:
+			on_mult_block(size, size, size, block_size, event_set, stats);
+			break;
+		default:
+			return 1;
 	}
 
 	file << op << ','
 		 << size << ','
-		 << blockSize << ','
-		 << statistics.time << ','
-		 << statistics.values[0] << ','
-		 << statistics.values[1] << ','
-		 << statistics.mflops
+		 << block_size << ','
+		 << stats.time << ','
+		 << stats.values[0] << ','
+		 << stats.values[1] << ','
+		 << stats.mflops
 		 << endl;
 
-	file.close();
+	return 0;
+}
+
+template <typename T>
+int safe_get_cin(T &var, const string &error_message) {
+	if (cin >> var)
+		return 0;
+
+	if (cin.eof())
+		exit(EXIT_SUCCESS);
+
+	cout << error_message << endl;
+	cin.clear();
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	return 1;
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc < 2)
+	{
+		print_usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	ofstream file = create_file(argv[1]);
+	if (!file.is_open())
+	{
+		cout << "Error opening file";
+		exit(EXIT_FAILURE);
+	}
+
+	int op, size, block_size;
+	int event_set = setup_papi();
+
+	if (argc >= 3) {
+		char *endptr;
+
+		op = strtol(argv[2], &endptr, 10);
+		if (endptr == argv[2] || op < 0 || op > 3)
+		{
+			cout << "Invalid operation" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+		{
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		size = strtol(argv[3], &endptr, 10);
+		if (endptr == argv[3] || size <= 0)
+		{
+			cout << "Invalid size" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		if (op == 3)
+		{
+			block_size = strtol(argv[4], &endptr, 10);
+			if (endptr == argv[4] || block_size <= 0)
+			{
+				cout << "Invalid block size" << endl;
+				print_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		if (execute_operation(op, size, block_size, file, event_set) != 0)
+			exit(EXIT_FAILURE);
+
+	} else {
+
+		while (true) {
+			cout << "\n1. Multiplication\n"
+				<< "2. Line Multiplication\n"
+				<< "3. Block Multiplication\n"
+				<< "0. Exit\n"
+				<< "Operation ? " << flush;
+
+			if (safe_get_cin(op, "Invalid operation") != 0)
+				continue;
+			if (op == 0)
+				break;
+
+			cout << "Matrix size ? ";
+			if (safe_get_cin(size, "Invalid size") != 0)
+				continue;
+
+			if (op == 3)
+			{
+				cout << "Block size ? ";
+				if (safe_get_cin(block_size, "Invalid block size") != 0)
+					continue;
+			}
+
+			if (execute_operation(op, size, block_size, file, event_set) != 0)
+				exit(EXIT_FAILURE);
+		}
+	}
+
+	cleanup_papi(event_set);
 
 	return 0;
 }
