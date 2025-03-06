@@ -34,7 +34,7 @@ end
 
 local function on_mult(m, n, p)
     local temp
-    
+
     local mat_a = init_array(m, n, true)
     local mat_b = init_array(n, p, true)
     local mat_c = init_array(m, p, false)
@@ -71,7 +71,7 @@ local function on_mult_line(m, n, p)
                     mat_c[i * p + j + 1] = mat_c[i * p + j + 1] + mat_a[i * n + k + 1] * mat_b[k * p + j + 1];
                 end
             end
-        end 
+        end
     end
 
     time = time_func(execute_mult)
@@ -84,7 +84,7 @@ end
 
 local function print_usage()
     print("Usage: luajit matrixproduct.lua <op> <size> <output>")
-    print("  <op>     : Opration mode: 1, 2 (required)")
+    print("  <op>     : Operation mode: 1, 2 (required)")
     print("  <size>   : Size of matrix (required)")
     print("  <output> : Output filename (required)")
 end
@@ -96,16 +96,22 @@ local function create_file(filename)
         file = io.open(filename, "a")
         if file == nil then
             error("Failed to open file")
+            return nil
         end
     else
         file = io.open(filename, "w")
         if file == nil then
             error("Failed to create file")
+            return nil
         end
         file:write("OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,MFLOPS\n")
     end
 
     return file
+end
+
+local function is_integer(num)
+    return num == math.floor(num)
 end
 
 local function main()
@@ -115,12 +121,16 @@ local function main()
     end
 
     local op = tonumber(arg[1]);
-    local size = tonumber(arg[2])
+    local size = tonumber(arg[2]);
+    if op == nil or size == nil or not is_integer(op) or not is_integer(size) then
+        print_usage()
+        return
+    end
+
     local filename = arg[3]
     local file = create_file(filename)
 
-    if size == nil then
-        print_usage()
+    if file == nil then
         return
     end
 
