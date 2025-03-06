@@ -323,14 +323,13 @@ int execute_operation(int op, int size, int block_size, ofstream &file, int even
 }
 
 template <typename T>
-int safe_get_cin(T &var, const string &error_message) {
+int safe_get_cin(T &var) {
 	if (cin >> var)
 		return 0;
 
 	if (cin.eof())
 		exit(EXIT_SUCCESS);
 
-	cout << error_message << endl;
 	cin.clear();
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 	return 1;
@@ -389,6 +388,10 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 		}
+		else
+		{
+			block_size = 0;
+		}
 
 		if (execute_operation(op, size, block_size, file, event_set) != 0)
 			exit(EXIT_FAILURE);
@@ -404,20 +407,33 @@ int main(int argc, char *argv[])
 				<< "0. Exit\n"
 				<< "Operation ? " << flush;
 
-			if (safe_get_cin(op, "Invalid operation") != 0)
+			if (safe_get_cin(op) != 0 || op < 0 || op > 3)
+			{
+				cout << "Invalid operation" << endl;
 				continue;
+			}
 			if (op == 0)
 				break;
 
 			cout << "Matrix size ? ";
-			if (safe_get_cin(size, "Invalid size") != 0)
+			if (safe_get_cin(size) != 0 || size <= 0)
+			{
+				cout << "Invalid size" << endl;
 				continue;
+			}
 
 			if (op == 3)
 			{
 				cout << "Block size ? ";
-				if (safe_get_cin(block_size, "Invalid block size") != 0)
+				if (safe_get_cin(block_size) != 0 || block_size <= 0)
+				{
+					cout << "Invalid block size" << endl;
 					continue;
+				}
+			}
+			else
+			{
+				block_size = 0;
 			}
 
 			if (execute_operation(op, size, block_size, file, event_set) != 0)
