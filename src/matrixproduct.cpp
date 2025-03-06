@@ -225,7 +225,7 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 
 void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &stats)
 {
-	
+
 	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
 		int i, j, k;
@@ -245,11 +245,11 @@ void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &sta
 
 void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &stats)
 {
-	
+
 	auto exec_mult = [&](double *mat_a, double *mat_b, double *mat_c)
 	{
 		int i, j, k;
-		
+
 		#pragma omp parallel private(i, k)
 		for (i = 0; i < m; i++)
 		{
@@ -285,43 +285,6 @@ ofstream create_file(const string &file_name)
 	return file;
 }
 
-int execute_operation(int op, int size, int block_size, ofstream &file, int event_set)
-{
-	Statistics stats;
-
-	switch (op)
-	{
-		case 1:
-			on_mult(size, size, size, event_set, stats);
-			break;
-		case 2:
-			on_mult_line(size, size, size, event_set, stats);
-			break;
-		case 3:
-			on_mult_block(size, size, size, block_size, event_set, stats);
-			break;
-		case 4:
-			on_mult_line_parallel_1(size, size, size, event_set, stats);
-			break;
-		case 5:
-			on_mult_line_parallel_2(size, size, size, event_set, stats);
-			break;
-		default:
-			return 1;
-	}
-
-	file << op << ','
-		 << size << ','
-		 << block_size << ','
-		 << stats.time << ','
-		 << stats.values[0] << ','
-		 << stats.values[1] << ','
-		 << stats.mflops
-		 << endl;
-
-	return 0;
-}
-
 template <typename T>
 int safe_get_cin(T &var) {
 	if (cin >> var)
@@ -352,6 +315,7 @@ int main(int argc, char *argv[])
 
 	int op, size, block_size = 0;
 	int event_set = setup_papi();
+	Statistics stats;
 
 	if (argc >= 3) {
 		char *endptr;
@@ -393,8 +357,35 @@ int main(int argc, char *argv[])
 			block_size = 0;
 		}
 
-		if (execute_operation(op, size, block_size, file, event_set) != 0)
-			exit(EXIT_FAILURE);
+		switch (op)
+		{
+			case 1:
+				on_mult(size, size, size, event_set, stats);
+				break;
+			case 2:
+				on_mult_line(size, size, size, event_set, stats);
+				break;
+			case 3:
+				on_mult_block(size, size, size, block_size, event_set, stats);
+				break;
+			case 4:
+				on_mult_line_parallel_1(size, size, size, event_set, stats);
+				break;
+			case 5:
+				on_mult_line_parallel_2(size, size, size, event_set, stats);
+				break;
+			default:
+				return 1;
+		}
+
+		file << op << ','
+			<< size << ','
+			<< block_size << ','
+			<< stats.time << ','
+			<< stats.values[0] << ','
+			<< stats.values[1] << ','
+			<< stats.mflops
+			<< endl;
 
 	} else {
 
@@ -436,8 +427,35 @@ int main(int argc, char *argv[])
 				block_size = 0;
 			}
 
-			if (execute_operation(op, size, block_size, file, event_set) != 0)
-				exit(EXIT_FAILURE);
+			switch (op)
+			{
+				case 1:
+					on_mult(size, size, size, event_set, stats);
+					break;
+				case 2:
+					on_mult_line(size, size, size, event_set, stats);
+					break;
+				case 3:
+					on_mult_block(size, size, size, block_size, event_set, stats);
+					break;
+				case 4:
+					on_mult_line_parallel_1(size, size, size, event_set, stats);
+					break;
+				case 5:
+					on_mult_line_parallel_2(size, size, size, event_set, stats);
+					break;
+				default:
+					return 1;
+			}
+
+			file << op << ','
+				<< size << ','
+				<< block_size << ','
+				<< stats.time << ','
+				<< stats.values[0] << ','
+				<< stats.values[1] << ','
+				<< stats.mflops
+				<< endl;
 		}
 	}
 
