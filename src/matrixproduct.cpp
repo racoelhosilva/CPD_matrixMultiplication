@@ -85,24 +85,24 @@ int setup_papi()
 	return event_set;
 }
 
-void cleanup_papi(int *event_set)
+void cleanup_papi(int &event_set)
 {
 	int ret;
-	ret = PAPI_remove_event(*event_set, PAPI_L1_DCM);
+	ret = PAPI_remove_event(event_set, PAPI_L1_DCM);
 	if (ret != PAPI_OK)
 		cout << "FAIL remove event" << endl;
 
-	ret = PAPI_remove_event(*event_set, PAPI_L2_DCM);
+	ret = PAPI_remove_event(event_set, PAPI_L2_DCM);
 	if (ret != PAPI_OK)
 		cout << "FAIL remove event" << endl;
 
-	ret = PAPI_destroy_eventset(event_set);
+	ret = PAPI_destroy_eventset(&event_set);
 	if (ret != PAPI_OK)
 		cout << "FAIL destroy" << endl;
 }
 
 template <typename Function>
-void measure_exec(Function function, int m, int n, int p, int event_set, Statistics *stats)
+void measure_exec(Function function, int m, int n, int p, int event_set, Statistics &stats)
 {
 	int ret;
 
@@ -116,8 +116,8 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
-		stats->time = -1.0;
-		stats->mflops = -1.0;
+		stats.time = -1.0;
+		stats.mflops = -1.0;
 		memset(stats->values, 0, sizeof(stats->values));
 	}
 
@@ -130,10 +130,10 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats->time = (double)(tf - ti) / CLOCKS_PER_SEC;
-	stats->mflops = (2.0 * m * n * p) / (stats->time * 1e6);
+	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	stats.mflops = (2.0 * m * n * p) / (stats->time * 1e6);
 
-	ret = PAPI_stop(event_set, stats->values);
+	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
@@ -146,7 +146,7 @@ void measure_exec(Function function, int m, int n, int p, int event_set, Statist
 	free(mat_c);
 }
 
-void on_mult(int m, int n, int p, int event_set, Statistics *stats)
+void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 {
 	double temp;
 	int i, j, k;
@@ -168,7 +168,7 @@ void on_mult(int m, int n, int p, int event_set, Statistics *stats)
 	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-void on_mult_line(int m, int n, int p, int event_set, Statistics *stats)
+void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 {
 	int i, j, k;
 
@@ -187,7 +187,7 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics *stats)
 	return measure_exec(exec_mult, m, n, p, event_set, stats);
 }
 
-void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics *stats)
+void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics &stats)
 {
 	int I, J, K, i, j, k;
 
@@ -244,13 +244,13 @@ int execute_operation(int op, int size, int block_size, ofstream &file, int even
 	switch (op)
 	{
 		case 1:
-			on_mult(size, size, size, event_set, &stats);
+			on_mult(size, size, size, event_set, stats);
 			break;
 		case 2:
-			on_mult_line(size, size, size, event_set, &stats);
+			on_mult_line(size, size, size, event_set, stats);
 			break;
 		case 3:
-			on_mult_block(size, size, size, block_size, event_set, &stats);
+			on_mult_block(size, size, size, block_size, event_set, stats);
 			break;
 		default:
 			return 1;
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 	}
 
-	cleanup_papi(&event_set);
+	cleanup_papi(event_set);
 
 	return 0;
 }
