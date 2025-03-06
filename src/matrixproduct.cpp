@@ -6,6 +6,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
+#include <cstring>
 
 using namespace std;
 
@@ -97,7 +98,7 @@ void cleanup_papi(int *event_set)
 }
 
 template <typename Function>
-Statistics measure_exec(Function function, int m, int n, int p)
+void measure_exec(Function function, int m, int n, int p, Statistics *stats)
 {
 	ret = PAPI_start(event_set);
 	if (ret != PAPI_OK)
@@ -107,10 +108,11 @@ Statistics measure_exec(Function function, int m, int n, int p)
 	double *mat_b = init_array(p, n, true);
 	double *mat_c = init_array(m, n, false);
 
-	if (!mat_a || !mat_b || !mat_b)
-		return {-1.0, -1.0};
-
-	Statistics statistics;
+	if (!mat_a || !mat_b || !mat_b) {
+		stats->time = -1.0;
+		stats->mflops = -1.0;
+		memset(stats->values, 0, sizeof(stats->values));
+	}
 
 	SYSTEMTIME ti = clock();
 	function(mat_a, mat_b, mat_c);
@@ -121,10 +123,10 @@ Statistics measure_exec(Function function, int m, int n, int p)
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	statistics.time = (double)(tf - ti) / CLOCKS_PER_SEC;
-	statistics.mflops = (2.0 * m * n * p) / (statistics.time * 1e6);
+	stats->time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	stats->mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
-	ret = PAPI_stop(event_set, statistics.values);
+	ret = PAPI_stop(event_set, stats->values);
 	if (ret != PAPI_OK)
 		std::cout << "ERROR: Stop PAPI" << endl;
 
@@ -135,11 +137,9 @@ Statistics measure_exec(Function function, int m, int n, int p)
 	free(mat_a);
 	free(mat_b);
 	free(mat_c);
-
-	return statistics;
 }
 
-Statistics on_mult(int m, int n, int p)
+void on_mult(int m, int n, int p, Statistics *stats)
 {
 	double temp;
 	int i, j, k;
@@ -158,10 +158,10 @@ Statistics on_mult(int m, int n, int p)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, stats);
 }
 
-Statistics on_mult_line(int m, int n, int p)
+void on_mult_line(int m, int n, int p, Statistics *stats)
 {
 	int i, j, k;
 
@@ -177,10 +177,10 @@ Statistics on_mult_line(int m, int n, int p)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, stats);
 }
 
-Statistics on_mult_block(int m, int n, int p, int block_size)
+void on_mult_block(int m, int n, int p, int block_size, Statistics *stats)
 {
 	int I, J, K, i, j, k;
 
@@ -207,7 +207,7 @@ Statistics on_mult_block(int m, int n, int p, int block_size)
 		}
 	};
 
-	return measure_exec(exec_mult, m, n, p);
+	return measure_exec(exec_mult, m, n, p, stats);
 }
 
 void print_usage(const string &program_name)
@@ -248,20 +248,20 @@ int main(int argc, char *argv[])
 	int size = std::atoi(argv[2]);
 	std::ofstream file = create_file(argv[3]);
 	int block_size = op == 3 ? std::atoi(argv[4]) : 0;
-	Statistics statistics;
 
+	Statistics stats;
 	int event_set = setup_papi();
 
 	switch (op)
 	{
 	case 1:
-		statistics = on_mult(size, size, size);
+		on_mult(size, size, size, &stats);
 		break;
 	case 2:
-		statistics = on_mult_line(size, size, size);
+		on_mult_line(size, size, size, &stats);
 		break;
 	case 3:
-		statistics = on_mult_block(size, size, size, block_size);
+		on_mult_block(size, size, size, block_size, &stats);
 		break;
 	default:
 		print_usage(argv[0]);
@@ -273,10 +273,10 @@ int main(int argc, char *argv[])
 	file << op << ','
 		 << size << ','
 		 << block_size << ','
-		 << statistics.time << ','
-		 << statistics.values[0] << ','
-		 << statistics.values[1] << ','
-		 << statistics.mflops
+		 << stats.time << ','
+		 << stats.values[0] << ','
+		 << stats.values[1] << ','
+		 << stats.mflops
 		 << endl;
 
 	file.close();
