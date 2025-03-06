@@ -222,11 +222,11 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 
 void print_usage(const string &program_name)
 {
-	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [block-size])]\n"
+	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [<block-size>])]\n"
 		 << "  <op>          : Operation mode: 1, 2, 3 (required)\n"
 		 << "  <size>        : Size of matrix (required)\n"
 		 << "  <output-file> : Output filename (required)\n"
-		 << "  [block-size]  : Size of a block (optional)" << endl;
+		 << "  <block-size>  : Size of a block (optional)" << endl;
 }
 
 ofstream create_file(const string &file_name)
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 	ofstream file = create_file(argv[1]);
 	if (!file.is_open())
 	{
-		perror("Error opening file");
+		cout << "Error opening file";
 		exit(EXIT_FAILURE);
 	}
 
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 			if (op == 0)
 				break;
 
-			cout << "Size: lins=cols ? ";
+			cout << "Matrix size ? ";
 			if (safe_get_cin(size, "Invalid size") != 0)
 				continue;
 
