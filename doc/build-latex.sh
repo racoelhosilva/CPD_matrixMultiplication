@@ -1,8 +1,8 @@
 #!/bin/sh
 
-ROOT=$(dirname $(realpath $0))
+ROOT=$(dirname "$(realpath "$0")")
 
-function print_usage() {
+print_usage() {
     cat << EOF
 Usage: $0 [options]
 
@@ -14,38 +14,38 @@ Options:
 EOF
 }
 
-function build() {
+build() {
     if ! [ -x "$(command -v xelatex)" ]; then
-        echo -e "\x1b[31m[fail] xelatex not available, aborting"
+        echo "[fail] xelatex not available, aborting"
         exit 1
     fi
     if ! [ -x "$(command -v bibtex)" ]; then
-        echo -e "\x1b[31m[fail] bibtex not available, aborting"
+        echo "[fail] bibtex not available, aborting"
         exit 1
     fi
 
-    cd "$ROOT"
+    cd "$ROOT" || exit
     mkdir -p build
     cp -rf latex/* build
 
-    cd "$ROOT/build"
+    cd "$ROOT/build" || exit
     xelatex main  # Generate auxiliary files
     bibtex main   # Generate bibliographic references
     xelatex main  # Update auxiliary files
     xelatex main  # Generate final PDF
     if [ $? -ne 0 ]; then
-        echo -e "\x1b[31m[fail] an error occurred while compiling the project"
+        echo "[fail] an error occurred while compiling the project"
         exit 1
     fi
     
-    cd "$ROOT"
+    cd "$ROOT" || exit
     cp build/main.pdf report.pdf
-    echo -e "\x1b[36m[info] Report compiled successfully\x1b[0m"
+    echo "[info] Report compiled successfully"
 }
 
-function clean() {
+clean() {
     rm -rf "$ROOT/build"
-    echo -e "\x1b[36m[info] Build cleaned\x1b[0m"
+    echo "[info] Build cleaned"
 }
 
 ARGS=$(getopt -o 'hc' --long 'help,clean' -n "$0" -- "$@" 2> /dev/null)
