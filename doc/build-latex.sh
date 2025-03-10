@@ -16,11 +16,11 @@ EOF
 
 build() {
     if ! [ -x "$(command -v xelatex)" ]; then
-        echo "[fail] xelatex not available, aborting"
+        printf "\033[31m[fail] xelatex not available, aborting\033[0m\n"
         exit 1
     fi
     if ! [ -x "$(command -v bibtex)" ]; then
-        echo "[fail] bibtex not available, aborting"
+        printf "\033[31m[fail] bibtex not available, aborting\033[0m\n"
         exit 1
     fi
 
@@ -34,18 +34,18 @@ build() {
     xelatex main  # Update auxiliary files
     xelatex main  # Generate final PDF
     if [ $? -ne 0 ]; then
-        echo "[fail] an error occurred while compiling the project"
+        printf "\033[31m[fail] an error occurred while compiling the project\033[0m\n"
         exit 1
     fi
     
     cd "$ROOT" || exit
     cp build/main.pdf report.pdf
-    echo "[info] Report compiled successfully"
+    printf "\033[36m[info] Report compiled successfully\033[0m\n"
 }
 
 clean() {
     rm -rf "$ROOT/build"
-    echo "[info] Build cleaned"
+    printf "\033[36m[info] Build cleaned\033[0m\n"
 }
 
 ARGS=$(getopt -o 'hc' --long 'help,clean' -n "$0" -- "$@" 2> /dev/null)
