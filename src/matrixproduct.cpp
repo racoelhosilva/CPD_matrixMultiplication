@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 				<< "0. Exit\n"
 				<< "Operation ? " << flush;
 
-			if (safe_get_cin(op) != 0 || op < 0 || op > 3)
+			if (safe_get_cin(op) != 0 || op < 0 || op > 5)
 			{
 				cout << "Invalid operation" << endl;
 				continue;
