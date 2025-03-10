@@ -4,9 +4,33 @@ To see the effects of cache locality and parallel computing on matrix multiplica
 
 \subsection{Classic Matrix Multiplication}
 
+The "classic" matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A x B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
 
+Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values:
 
+\begin{verbatim}
+for (i = 0; i < m; i++)
+    for (j = 0; j < p; j++)
+        for (k = 0; k < n; k++)
+            // Perform operations
+\end{verbatim}
+
+% TODO: Add some more explanation, possibly about complexity
+    
 \subsection{Line Matrix Multiplication}
+
+The line matrix multiplication algorithm is very similar to the previous algorithm. The only difference is that the second and third loops switch places:
+
+\begin{verbatim}
+    for (i = 0; i < m; i++)
+        for (k = 0; k < n; k++)
+            for (j = 0; j < p; j++)
+                // Perform operations
+\end{verbatim}
+
+In practice, the difference between this and the previous approach is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line.
+
+Although the correctness and overall time complexity of this algorithm remains the same, due to the way the matrices are stored and the memory is accesed, this allows for fewer cache misses, leading to performance improvements.
 
 \subsection{Block Matrix Multiplication}
 
