@@ -4,7 +4,7 @@ To see the effects of cache locality and parallel computing on matrix multiplica
 
 \subsection{Classic Matrix Multiplication}
 
-The "classic" matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A x B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
+The \textit{classic} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
 
 Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values:
 
@@ -22,10 +22,10 @@ for (i = 0; i < m; i++)
 The line matrix multiplication algorithm is very similar to the previous algorithm. The only difference is that the second and third loops switch places:
 
 \begin{verbatim}
-    for (i = 0; i < m; i++)
-        for (k = 0; k < n; k++)
-            for (j = 0; j < p; j++)
-                // Perform operations
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        for (j = 0; j < p; j++)
+            // Perform operations
 \end{verbatim}
 
 In practice, the difference between this and the previous approach is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line.
@@ -33,6 +33,20 @@ In practice, the difference between this and the previous approach is that inste
 Although the correctness and overall time complexity of this algorithm remains the same, due to the way the matrices are stored and the memory is accesed, this allows for fewer cache misses, leading to performance improvements.
 
 \subsection{Block Matrix Multiplication}
+
+The last single-core algorithm implemented is the block matrix multiplication algorithm. This approach expands on top of the previous one and the same logic applied in calculating subresults line by line is now used to calculate the solution block by block. For this, we need 6 nested loops:
+
+\begin{verbatim}
+for (I = 0; I < m; I += block_size)
+    for (K = 0; K < n; K += block_size)
+        for (J = 0; J < p; J += block_size)
+            for (i = I; i < min(I + block_size, m); i++)
+                for (k = K; k < min(K + block_size, n); k++)
+                    for (j = J; j < min(J + block_size, p); j++)
+                        // Perform operations
+\end{verbatim}
+
+The main idea is that now, we have divided the matrix into smaller blocks and the operations are performed block by block. Again, due to the way the memory is accessed, this leads to better performance and less cache misses because the local block information is already stored in cache.
 
 \subsection{Parallel Matrix Multiplication}
 
