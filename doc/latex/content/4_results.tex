@@ -1,1 +1,19 @@
 \section{Results and Analysis} \label{section:results}
+
+To benchmark the \hyperref[section:algorithms]{implementations previously discussed}, we executed the following test set 3 %TODO: specify value
+times, storing the results for analysis:
+
+\begin{itemize}
+    \item Naive, Line and Parallel implementations (across both C++ and Lua) with input matrices from $600 \times 600$ to $3000 \times 3000$ with size increments of $400$
+    \item Line, Block and Parallel implementations (in C++) with input matrices from $4096 \times 4096$ to $10240 \times 10240$ with size increments of $2048$, with block sizes $128$, $256$ and $512$
+\end{itemize}
+
+\subsection{Performance Evaluation of a Single Core Implementation}
+
+% C++ vs Lua (Naive vs Block)
+% Line vs Block
+% Block Size Comparison
+
+\subsection{Performance Evaluation of a Multi-Core Implementation}
+
+% Line vs Parallel 1 vs Parallel 2
