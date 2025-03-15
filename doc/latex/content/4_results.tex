@@ -1,7 +1,7 @@
 \section{Results and Analysis} \label{section:results}
 
-To benchmark the \hyperref[section:algorithms]{implementations previously discussed}, we executed the following test set 3 %TODO: specify value
-times, storing the results for analysis:
+To benchmark the \hyperref[section:algorithms]{implementations previously discussed}, we executed the test set shown below 3 %TODO: specify value
+times, storing the results for analysis. All graphs produced are available in the \hyperref[section:appendix]{Appendix section}.
 
 \begin{itemize}
     \item Naive, Line and Parallel implementations (across both C++ and Lua) with input matrices from $600 \times 600$ to $3000 \times 3000$ with size increments of $400$
@@ -10,9 +10,16 @@ times, storing the results for analysis:
 
 \subsection{Performance Evaluation of a Single Core Implementation}
 
-% C++ vs Lua (Naive vs Block)
+% C++ vs Lua (Naive vs Line)
+The first comparison in the single core implementations is between the naive and the line approach, which was compared both in C++ and Lua. The results show that, in both languages, the execution times are smaller for the latter, being even lower on the C++ Implementation when compared to Lua. Evidence for this can be seen in graphs \ref{fig:chart:naive-line-time} and \ref{fig:chart:naive-line-flops}.
+
+The main reason why the line implementation is more performant than the naive approach is due to memory accesses, especially, cache misses. Due to the way memory is loaded in the line implementation, memory accesses are much more organized and sequential, leading to a higher rate of cache hits which reduces execution bottlenecks such as memory fetching. 
+
 % Line vs Block
-% Block Size Comparison
+
+Having established the advantages of the line implementation, we can try to further optimize the code to reduce cache misses during memory accesses. The best approach for this is to further subdivide the matrix calculation and perform it in small blocks. Theoretically, the best block size would be $\sqrt {size}$, however, we decided to test with different matrix and block sizes.
+
+% TODO: Complete analysis based on new data
 
 \subsection{Performance Evaluation of a Multi-Core Implementation}
 

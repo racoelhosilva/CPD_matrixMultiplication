@@ -2,9 +2,9 @@
 
 To see the effects of cache locality and parallel computing on matrix multiplication implementations, we used five different matrix multiplication algorithms, described in this section. These algorithms perform the same operations, ending in the same results, only differing by the order of the operations done, which, as we will see, will have crucial impacts on each algorithm's performance.
 
-\subsection{Classic Matrix Multiplication}
+\subsection{Naive Matrix Multiplication}
 
-The \textit{classic} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
+The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
 
 Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values:
 
@@ -14,8 +14,8 @@ for (i = 0; i < m; i++)
     for (j = 0; j < p; j++)
         for (k = 0; k < n; k++)
 \end{verbatim}
-\caption{Overview of Classic Matrix Multiplication Algorithm}
-\label{fig:algo:classic}
+\caption{Overview of Naive Matrix Multiplication Algorithm}
+\label{fig:algo:naive}
 \end{figure}
 
 As we can expect from the 3 nested loops, the overall time complexity for the matrix multiplication algorithm is $Θ(n^3)$. This time complexity is maintained among all the implemented algorithms, therefore performance impacts are mainle caused by cache accesses and parallelism.
