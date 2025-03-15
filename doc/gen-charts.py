@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from aquarel import load_theme
 
-plot_theme = load_theme('ambivalent')
+plot_theme = load_theme('ambivalent').set_font(sans_serif='Lato')
 
 def import_csv_files(folder_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     cpp_dfs = []
@@ -42,16 +42,17 @@ def plot_lang_comp(cpp_df: pd.DataFrame, lua_df: pd.DataFrame) -> None:
     with plot_theme:
         plt.figure()
 
-        plt.plot(naive_cpp_df['SIZE'], naive_cpp_df['TIME'], label='Naive C++')
-        plt.plot(naive_lua_df['SIZE'], naive_lua_df['TIME'], label='Naive Lua')
-        plt.plot(line_cpp_df['SIZE'], line_cpp_df['TIME'], label='Line C++')
-        plt.plot(line_lua_df['SIZE'], line_lua_df['TIME'], label='Line Lua')
+        plt.plot(naive_cpp_df['SIZE'], naive_cpp_df['TIME'], label='Naive C++', marker='.')
+        plt.plot(naive_lua_df['SIZE'], naive_lua_df['TIME'], label='Naive Lua', marker='.')
+        plt.plot(line_cpp_df['SIZE'], line_cpp_df['TIME'], label='Line C++', marker='.')
+        plt.plot(line_lua_df['SIZE'], line_lua_df['TIME'], label='Line Lua', marker='.')
+
+        plt.xticks(range(600, 3001, 400))
 
         plt.title('Naive vs Line by Language')
         plt.xlabel('Size')
         plt.ylabel('Time (s)')
         plt.legend()
-        # plt.tight_layout()
 
         output_path = os.path.join(output_folder, 'naive-line.pdf')
         plt.savefig(output_path)
