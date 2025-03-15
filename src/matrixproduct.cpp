@@ -107,9 +107,9 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 	double temp;
 	int i, j, k;
 
-	double *mat_a = init_array(m, p, true);
-	double *mat_b = init_array(p, n, true);
-	double *mat_c = init_array(m, n, false);
+	double *mat_a = init_array(m, n, true);
+	double *mat_b = init_array(n, p, true);
+	double *mat_c = init_array(m, p, false);
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
@@ -167,9 +167,9 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 	double ti, tf;
 	int i, j, k;
 
-	double *mat_a = init_array(m, p, true);
-	double *mat_b = init_array(p, n, true);
-	double *mat_c = init_array(m, n, false);
+	double *mat_a = init_array(m, n, true);
+	double *mat_b = init_array(n, p, true);
+	double *mat_c = init_array(m, p, false);
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
@@ -225,9 +225,9 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 	double ti, tf;
 	int I, J, K, I_end, J_end, K_end, i, j, k;
 
-	double *mat_a = init_array(m, p, true);
-	double *mat_b = init_array(p, n, true);
-	double *mat_c = init_array(m, n, false);
+	double *mat_a = init_array(m, n, true);
+	double *mat_b = init_array(n, p, true);
+	double *mat_c = init_array(m, p, false);
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
@@ -298,9 +298,9 @@ void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &sta
 	double ti, tf;
 	int i, j, k;
 
-	double *mat_a = init_array(m, p, true);
-	double *mat_b = init_array(p, n, true);
-	double *mat_c = init_array(m, n, false);
+	double *mat_a = init_array(m, n, true);
+	double *mat_b = init_array(n, p, true);
+	double *mat_c = init_array(m, p, false);
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
@@ -357,9 +357,9 @@ void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &sta
 	double ti, tf;
 	int i, j, k;
 
-	double *mat_a = init_array(m, p, true);
-	double *mat_b = init_array(p, n, true);
-	double *mat_c = init_array(m, n, false);
+	double *mat_a = init_array(m, n, true);
+	double *mat_b = init_array(n, p, true);
+	double *mat_c = init_array(m, p, false);
 
 	if (!mat_a || !mat_b || !mat_b)
 	{
@@ -413,9 +413,12 @@ void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &sta
 
 void print_usage(const string &program_name)
 {
-	cout << "Usage: " << program_name << " <output-file> [(<op> <size> [<block-size>])]\n"
+	cout << "Usage: " << program_name << " <output-file> [(<op> <m> <n> <p> [<block-size>])]\n"
 		 << "  <output-file> : Output filename\n"
 		 << "  <op>          : Operation mode: 1, 2, 3, 4, 5\n"
+		 << "  <m>           : Number of rows in matrix A\n"
+		 << "  <n>           : Number of columns in matrix A = number of rows in matrix B\n"
+		 << "  <p>           : Number of columns in matrix B\n"
 		 << "  <size>        : Size of matrix\n"
 		 << "  <block-size>  : Size of a block" << endl;
 }
@@ -426,7 +429,7 @@ ofstream create_file(const string &file_name)
 	ofstream file(file_name, ios::out | ios::app);
 
 	if (!file_exists)
-		file << "OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
+		file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
 
 	return file;
 }
@@ -459,7 +462,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	int op, size, block_size = 0;
+	int op, m, n, p, block_size = 0;
 	int event_set = setup_papi();
 	Statistics stats;
 
@@ -474,24 +477,40 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 
-		if ((op != 3 && argc != 4) || (op == 3 && argc != 5))
+		if ((op != 3 && argc != 6) || (op == 3 && argc != 7))
 		{
 			print_usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 
-		size = strtol(argv[3], &endptr, 10);
-		if (endptr == argv[3] || size <= 0)
+		m = strtol(argv[3], &endptr, 10);
+		if (endptr == argv[3] || m <= 0)
 		{
-			cout << "Invalid size" << endl;
+			cout << "Invalid value for m" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		n = strtol(argv[4], &endptr, 10);
+		if (endptr == argv[4] || n <= 0)
+		{
+			cout << "Invalid value for n" << endl;
+			print_usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		p = strtol(argv[5], &endptr, 10);
+		if (endptr == argv[5] || p <= 0)
+		{
+			cout << "Invalid value for p" << endl;
 			print_usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 
 		if (op == 3)
 		{
-			block_size = strtol(argv[4], &endptr, 10);
-			if (endptr == argv[4] || block_size <= 0)
+			block_size = strtol(argv[6], &endptr, 10);
+			if (endptr == argv[6] || block_size <= 0)
 			{
 				cout << "Invalid block size" << endl;
 				print_usage(argv[0]);
@@ -506,26 +525,26 @@ int main(int argc, char *argv[])
 		switch (op)
 		{
 			case 1:
-				on_mult(size, size, size, event_set, stats);
+				on_mult(m, n, p, event_set, stats);
 				break;
 			case 2:
-				on_mult_line(size, size, size, event_set, stats);
+				on_mult_line(m, n, p, event_set, stats);
 				break;
 			case 3:
-				on_mult_block(size, size, size, block_size, event_set, stats);
+				on_mult_block(m, n, p, block_size, event_set, stats);
 				break;
 			case 4:
-				on_mult_line_parallel_1(size, size, size, event_set, stats);
+				on_mult_line_parallel_1(m, n, p, event_set, stats);
 				break;
 			case 5:
-				on_mult_line_parallel_2(size, size, size, event_set, stats);
+				on_mult_line_parallel_2(m, n, p, event_set, stats);
 				break;
 			default:
 				return 1;
 		}
 
 		file << op << ','
-			<< size << ','
+			<< m << ','  // TODO: Write all values
 			<< block_size << ','
 			<< stats.time << ','
 			<< stats.values[0] << ','
@@ -552,8 +571,22 @@ int main(int argc, char *argv[])
 			if (op == 0)
 				break;
 
-			cout << "Matrix size ? ";
-			if (safe_get_cin(size) != 0 || size <= 0)
+			cout << "Number of rows in matrix A ? ";
+			if (safe_get_cin(m) != 0 || m <= 0)
+			{
+				cout << "Invalid size" << endl;
+				continue;
+			}
+
+			cout << "Number of columns in matrix A = number of rows in matrix B ? ";
+			if (safe_get_cin(n) != 0 || n <= 0)
+			{
+				cout << "Invalid size" << endl;
+				continue;
+			}
+
+			cout << "Number of columns in matrix B ? ";
+			if (safe_get_cin(p) != 0 || p <= 0)
 			{
 				cout << "Invalid size" << endl;
 				continue;
@@ -576,26 +609,28 @@ int main(int argc, char *argv[])
 			switch (op)
 			{
 				case 1:
-					on_mult(size, size, size, event_set, stats);
+					on_mult(m, n, p, event_set, stats);
 					break;
 				case 2:
-					on_mult_line(size, size, size, event_set, stats);
+					on_mult_line(m, n, p, event_set, stats);
 					break;
 				case 3:
-					on_mult_block(size, size, size, block_size, event_set, stats);
+					on_mult_block(m, n, p, block_size, event_set, stats);
 					break;
 				case 4:
-					on_mult_line_parallel_1(size, size, size, event_set, stats);
+					on_mult_line_parallel_1(m, n, p, event_set, stats);
 					break;
 				case 5:
-					on_mult_line_parallel_2(size, size, size, event_set, stats);
+					on_mult_line_parallel_2(m, n, p, event_set, stats);
 					break;
 				default:
 					return 1;
 			}
 
 			file << op << ','
-				<< size << ','
+				<< m << ','
+				<< n << ','
+				<< p << ','
 				<< block_size << ','
 				<< stats.time << ','
 				<< stats.values[0] << ','
