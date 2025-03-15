@@ -12,17 +12,11 @@
 
 using namespace std;
 
-#ifdef L3
-#define NUM_PAPI_EVENTS 3
-#else
-#define NUM_PAPI_EVENTS 2
-#endif
-
 struct Statistics
 {
 	double time = 0.0;
 	double mflops = 0.0;
-	long long values[NUM_PAPI_EVENTS] = {0};
+	long long values[3] = {0};
 };
 
 double *init_array(int m, int n, bool fill)
@@ -477,11 +471,7 @@ ofstream create_file(const string &file_name)
 	ofstream file(file_name, ios::out | ios::app);
 
 	if (!file_exists) {
-		#ifdef L3
-			file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,L3 TCM,MFLOPS" << endl;
-		#else
-			file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
-		#endif
+		file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,L3 TCM,MFLOPS" << endl;
 	}
 
 	return file;
@@ -603,13 +593,9 @@ int main(int argc, char *argv[])
 			 << block_size << ','
 			 << stats.time << ','
 			 << stats.values[0] << ','
-			 << stats.values[1] << ',';
-
-		#ifdef L3
-		file << stats.values[2] << ',';
-		#endif
-
-		file << stats.mflops
+			 << stats.values[1] << ','
+  			 << stats.values[2] << ','
+			 << stats.mflops
 			 << endl;
 
 	} else {
@@ -693,13 +679,9 @@ int main(int argc, char *argv[])
 				 << block_size << ','
 				 << stats.time << ','
 				 << stats.values[0] << ','
-				 << stats.values[1] << ',';
-
-			#ifdef L3
-			file << stats.values[2] << ',';
-			#endif
-
-			file << stats.mflops
+				 << stats.values[1] << ','
+				 << stats.values[2] << ','
+				 << stats.mflops
 				 << endl;
 		}
 	}
