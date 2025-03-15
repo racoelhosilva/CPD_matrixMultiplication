@@ -12,11 +12,17 @@
 
 using namespace std;
 
+#ifdef L3
+#define NUM_PAPI_EVENTS 3
+#else
+#define NUM_PAPI_EVENTS 2
+#endif
+
 struct Statistics
 {
 	double time = 0.0;
 	double mflops = 0.0;
-	long long values[2] = {0, 0};
+	long long values[NUM_PAPI_EVENTS] = {0};
 };
 
 double *init_array(int m, int n, bool fill)
@@ -81,6 +87,12 @@ int setup_papi()
 	if (ret != PAPI_OK)
 		cout << "ERROR: PAPI_L2_DCM" << endl;
 
+	#ifdef L3
+	ret = PAPI_add_event(event_set, PAPI_L3_TCM);
+	if (ret != PAPI_OK)
+		cout << "ERROR: PAPI_L3_TCM" << endl;
+	#endif
+
 	return event_set;
 }
 
@@ -94,6 +106,12 @@ void cleanup_papi(int &event_set)
 	ret = PAPI_remove_event(event_set, PAPI_L2_DCM);
 	if (ret != PAPI_OK)
 		cout << "FAIL remove event" << endl;
+
+	#ifdef L3
+	ret = PAPI_remove_event(event_set, PAPI_L3_TCM);
+	if (ret != PAPI_OK)
+		cout << "FAIL remove event" << endl;
+	#endif
 
 	ret = PAPI_destroy_eventset(&event_set);
 	if (ret != PAPI_OK)
@@ -150,7 +168,13 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
-		 << "L2 DCM: " << stats.values[1] << endl;
+		 << "L2 DCM: " << stats.values[1] << '\n';
+
+	#ifdef L3
+	cout << "L3 TCM: " << stats.values[2] << '\n';
+	#endif
+
+	cout << flush;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -208,7 +232,13 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
-		 << "L2 DCM: " << stats.values[1] << endl;
+		 << "L2 DCM: " << stats.values[1] << '\n';
+
+	#ifdef L3
+	cout << "L3 TCM: " << stats.values[2] << '\n';
+	#endif
+
+	cout << flush;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -280,7 +310,13 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
-		 << "L2 DCM: " << stats.values[1] << endl;
+		 << "L2 DCM: " << stats.values[1] << '\n';
+
+	#ifdef L3
+	cout << "L3 TCM: " << stats.values[2] << '\n';
+	#endif
+
+	cout << flush;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -340,7 +376,13 @@ void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &sta
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
-		 << "L2 DCM: " << stats.values[1] << endl;
+		 << "L2 DCM: " << stats.values[1] << '\n';
+
+	#ifdef L3
+	cout << "L3 TCM: " << stats.values[2] << '\n';
+	#endif
+
+	cout << flush;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -400,7 +442,13 @@ void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &sta
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
-		 << "L2 DCM: " << stats.values[1] << endl;
+		 << "L2 DCM: " << stats.values[1] << '\n';
+
+	#ifdef L3
+	cout << "L3 TCM: " << stats.values[2] << '\n';
+	#endif
+
+	cout << flush;
 
 	ret = PAPI_reset(event_set);
 	if (ret != PAPI_OK)
@@ -428,8 +476,13 @@ ofstream create_file(const string &file_name)
 	bool file_exists = ifstream(file_name).good();
 	ofstream file(file_name, ios::out | ios::app);
 
-	if (!file_exists)
-		file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
+	if (!file_exists) {
+		#ifdef L3
+			file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,L3 TCM,MFLOPS" << endl;
+		#else
+			file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,MFLOPS" << endl;
+		#endif
+	}
 
 	return file;
 }
@@ -544,13 +597,20 @@ int main(int argc, char *argv[])
 		}
 
 		file << op << ','
-			<< m << ','  // TODO: Write all values
-			<< block_size << ','
-			<< stats.time << ','
-			<< stats.values[0] << ','
-			<< stats.values[1] << ','
-			<< stats.mflops
-			<< endl;
+			 << m << ','
+			 << n << ','
+			 << p << ','
+			 << block_size << ','
+			 << stats.time << ','
+			 << stats.values[0] << ','
+			 << stats.values[1] << ',';
+
+		#ifdef L3
+		file << stats.values[2] << ',';
+		#endif
+
+		file << stats.mflops
+			 << endl;
 
 	} else {
 
@@ -628,15 +688,20 @@ int main(int argc, char *argv[])
 			}
 
 			file << op << ','
-				<< m << ','
-				<< n << ','
-				<< p << ','
-				<< block_size << ','
-				<< stats.time << ','
-				<< stats.values[0] << ','
-				<< stats.values[1] << ','
-				<< stats.mflops
-				<< endl;
+				 << m << ','
+				 << n << ','
+				 << p << ','
+				 << block_size << ','
+				 << stats.time << ','
+				 << stats.values[0] << ','
+				 << stats.values[1] << ',';
+
+			#ifdef L3
+			file << stats.values[2] << ',';
+			#endif
+
+			file << stats.mflops
+				 << endl;
 		}
 	}
 
