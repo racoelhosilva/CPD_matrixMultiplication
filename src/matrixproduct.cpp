@@ -613,7 +613,6 @@ int main(int argc, char *argv[])
 			 << endl;
 
 	} else {
-
 		while (true) {
 			cout << "\n1. Multiplication\n"
 				<< "2. Line Multiplication\n"
