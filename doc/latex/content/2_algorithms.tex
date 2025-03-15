@@ -13,13 +13,12 @@ Implementing this algorithm is fairly straighforward, as we only need to iterate
 for (i = 0; i < m; i++)
     for (j = 0; j < p; j++)
         for (k = 0; k < n; k++)
-            // Perform operations
 \end{verbatim}
 \caption{Overview of Classic Matrix Multiplication Algorithm}
 \label{fig:algo:classic}
 \end{figure}
 
-% TODO: Add some more explanation, possibly about complexity
+As we can expect from the 3 nested loops, the overall time complexity for the matrix multiplication algorithm is $Θ(n^3)$. This time complexity is maintained among all the implemented algorithms, therefore performance impacts are mainle caused by cache accesses and parallelism.
     
 \subsection{Line Matrix Multiplication}
 
@@ -30,7 +29,6 @@ The line matrix multiplication algorithm is very similar to the previous algorit
 for (i = 0; i < m; i++)
     for (k = 0; k < n; k++)
         for (j = 0; j < p; j++)
-            // Perform operations
 \end{verbatim}
 \caption{Overview of Line Matrix Multiplication Algorithm}
 \label{fig:algo:line}
@@ -52,7 +50,6 @@ for (I = 0; I < m; I += block_size)
             for (i = I; i < min(I + block_size, m); i++)
                 for (k = K; k < min(K + block_size, n); k++)
                     for (j = J; j < min(J + block_size, p); j++)
-                        // Perform operations
 \end{verbatim}
 \caption{Overview of Block Matrix Multiplication Algorithm}
 \label{fig:algo:block}
@@ -62,7 +59,39 @@ The main idea is that now, we have divided the matrix into smaller blocks and th
 
 \subsection{Parallel Matrix Multiplication}
 
+Besides the previous three single-core algorithms, we also implemented two variations of the line algorithm using multi-core processing. For this, we used the OpenMP API for parallel programming in C++. The next sections show an explanation and overview of the implementations.
+
 \subsubsection{First Version}
+
+The first approach aims to parallelize the outermost loop (i) of the line algorithm. There will be a division of i values between the different threads so that each one works on a separate row at the same time (they also get their own k and j variables). Due to working on separate rows, the threads do not need synchronization.
+
+For this, we used OpenMP's \verb#parallel for# and \verb#private# variable pragmas:
+
+\begin{figure}[h!]
+\begin{verbatim}
+#pragma omp parallel for private(i, k, j)
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        for (j = 0; j < p; j++)
+\end{verbatim}
+\caption{Overview of First Parallel Matrix Multiplication Algorithm}
+\label{fig:algo:parallel1}
+\end{figure}
 
 \subsubsection{Second Version}
 
+The second approach aims to parallelize the innemost loop (j) of the line algorithm. The thread pool will work on the same row at the same time but on different columns. In this case, the threads need to be synchronized after finishing the row operations which can lead to some overhead.
+
+For this, we used OpenMP's \verb#parallel# region, \verb#for# and \verb#private# variable pragmas:
+
+\begin{figure}[h!]
+\begin{verbatim}
+#pragma omp parallel private(i, k)
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        #pragma omp for private(j)
+        for (j = 0; j < p; j++)
+\end{verbatim}
+\caption{Overview of Second Parallel Matrix Multiplication Algorithm}
+\label{fig:algo:parallel2}
+\end{figure}
