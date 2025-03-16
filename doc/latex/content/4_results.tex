@@ -15,12 +15,24 @@ The first comparison in the single core implementations is between the naive and
 
 The main reason why the line implementation is more performant than the naive approach is due to memory accesses, especially, cache misses. Due to the way memory is loaded in the line implementation, memory accesses are much more organized and sequential, leading to a higher rate of cache hits which reduces execution bottlenecks such as memory fetching. 
 
-% Line vs Block
-
+% Line vs Block (variable block sizes)
 Having established the advantages of the line implementation, we can try to further optimize the code to reduce cache misses during memory accesses. The best approach for this is to further subdivide the matrix calculation and perform it in small blocks. Theoretically, the best block size would be $\sqrt {size}$, however, we decided to test with different matrix and block sizes.
+The results of our benchmarks can be consulted in figures \ref{fig:chart:line-block-time} and \ref{fig:chart:line-block-flops}.
 
 % TODO: Complete analysis based on new data
 
 \subsection{Performance Evaluation of a Multi-Core Implementation}
 
 % Line vs Parallel 1 vs Parallel 2
+Besides the single core algorithms, we also implemented two multi-core approaches using OpenMP and based on the line algorithm.
+As expected, both multi-core algorithms have better performance when compared to the single core line approach. 
+
+By distributing the operation load across different processing units, these approaches are able to perform a larger number of floating point operations per second and, consequently, have smaller execution times, as we can see in graphs \ref{fig:chart:parallel-time} and \ref{fig:chart:parallel-flops}.
+
+Nonetheless, the multi-core implementations follow different ideas, as discussed in the \hyperref[section:algorithms]{Algorithms section} and have substantially different results. While still being faster than the sequential code, the first implementation is able to execute 3 to 4 times more Mflops than the second one.
+
+While both take advantage of parallelism, the second approach has an associated synchronization overhead after the inner parallelized loop, which can lead to sizeable overheads, especially for larger input sizes.
+
+As a result of this, we observe faster execution times for the first parallel approach which uses parallelism on the outermost loop, not requiring any synchronization whatsoever. The comparison between these two algorithms is evident when comparing their speedup and efficiency. 
+
+While the second approach has a speedup of slightly over $1\times$ for matrices over around $1000 \times 1000$ and efficiency below $0.2$, the first implementation is at least $4\times$ faster (usually even around $6\times$) and has an efficiency over $0.5$ when compared to the sequential version. These conclusions can be seen in the figures \ref{fig:chart:parallel-speedup} and \ref{fig:chart:parallel-efficiency}.
