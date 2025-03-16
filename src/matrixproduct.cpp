@@ -45,11 +45,11 @@ double *init_array(int m, int n, bool fill)
 	return mat;
 }
 
-void print_time_diff(double ti, double tf)
+void print_time_diff(double time_diff)
 {
 	cout << "Time: "
 		 << fixed << setw(3) << setprecision(3)
-		 << tf - ti
+		 << time_diff
 		 << " seconds\n";
 }
 
@@ -115,7 +115,7 @@ void cleanup_papi(int &event_set)
 void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 {
 	int ret;
-	double ti, tf;
+	clock_t ti, tf;
 	double temp;
 	int i, j, k;
 
@@ -137,7 +137,7 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 	if (ret != PAPI_OK)
 		cout << "ERROR: Start PAPI" << endl;
 
-	ti = omp_get_wtime();
+	ti = clock();
 
 	for (i = 0; i < m; i++)
 	{
@@ -150,18 +150,18 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 		}
 	}
 
-	tf = omp_get_wtime();
+	tf = clock();
 
 	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
-	print_time_diff(ti, tf);
+	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	print_time_diff(stats.time);
 
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
@@ -185,7 +185,7 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 {
 	int ret;
-	double ti, tf;
+	clock_t ti, tf;
 	int i, j, k;
 
 	double *mat_a = init_array(m, n, true);
@@ -206,7 +206,7 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 	if (ret != PAPI_OK)
 		cout << "ERROR: Start PAPI" << endl;
 
-	ti = omp_get_wtime();
+	ti = clock();
 
 	for (i = 0; i < m; i++)
 	{
@@ -217,18 +217,18 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 		}
 	}
 
-	tf = omp_get_wtime();
+	tf = clock();
 
 	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
-	print_time_diff(ti, tf);
+	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	print_time_diff(stats.time);
 
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
@@ -252,7 +252,7 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistics &stats)
 {
 	int ret;
-	double ti, tf;
+	clock_t ti, tf;
 	int I, J, K, I_end, J_end, K_end, i, j, k;
 
 	double *mat_a = init_array(m, n, true);
@@ -273,7 +273,7 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 	if (ret != PAPI_OK)
 		cout << "ERROR: Start PAPI" << endl;
 
-	ti = omp_get_wtime();
+	ti = clock();
 
 	for (I = 0; I < m; I += block_size)
 	{
@@ -298,18 +298,18 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 		}
 	}
 
-	tf = omp_get_wtime();
+	tf = clock();
 
 	ret = PAPI_stop(event_set, stats.values);
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
-	print_time_diff(ti, tf);
+	stats.time = (double)(tf - ti) / CLOCKS_PER_SEC;
+	print_time_diff(stats.time);
 
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
@@ -373,12 +373,12 @@ void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &sta
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
-	print_time_diff(ti, tf);
+	stats.time = tf - ti;
+	print_time_diff(stats.time);
 
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
@@ -442,12 +442,12 @@ void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &sta
 	if (ret != PAPI_OK)
 		cout << "ERROR: Stop PAPI" << endl;
 
-	print_time_diff(ti, tf);
+	stats.time = tf - ti;
+	print_time_diff(stats.time);
 
 	cout << "Result matrix: ";
 	print_first_elems(mat_c, p);
 
-	stats.time = tf - ti;
 	stats.mflops = (2.0 * m * n * p) / (stats.time * 1e6);
 
 	cout << "L1 DCM: " << stats.values[0] << '\n'
