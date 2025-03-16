@@ -89,7 +89,6 @@ local function print_usage()
     print("  <m>           : Number of rows in matrix A")
     print("  <n>           : Number of columns in matrix A = number of rows in matrix B")
     print("  <p>           : Number of columns in matrix B")
-    print("  <size>        : Size of matrix")
 end
 
 local function create_file(filename)

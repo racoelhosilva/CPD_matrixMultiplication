@@ -123,11 +123,14 @@ void on_mult(int m, int n, int p, int event_set, Statistics &stats)
 	double *mat_b = init_array(n, p, true);
 	double *mat_c = init_array(m, p, false);
 
-	if (!mat_a || !mat_b || !mat_b)
+	if (!mat_a || !mat_b || !mat_c)
 	{
+		cout << "Error in init_array" << endl;
+
 		stats.time = -1.0;
 		stats.mflops = -1.0;
 		memset(stats.values, 0, sizeof(stats.values));
+		return;
 	}
 
 	ret = PAPI_start(event_set);
@@ -189,11 +192,14 @@ void on_mult_line(int m, int n, int p, int event_set, Statistics &stats)
 	double *mat_b = init_array(n, p, true);
 	double *mat_c = init_array(m, p, false);
 
-	if (!mat_a || !mat_b || !mat_b)
+	if (!mat_a || !mat_b || !mat_c)
 	{
+		cout << "Error in init_array" << endl;
+
 		stats.time = -1.0;
 		stats.mflops = -1.0;
 		memset(stats.values, 0, sizeof(stats.values));
+		return;
 	}
 
 	ret = PAPI_start(event_set);
@@ -253,11 +259,14 @@ void on_mult_block(int m, int n, int p, int block_size, int event_set, Statistic
 	double *mat_b = init_array(n, p, true);
 	double *mat_c = init_array(m, p, false);
 
-	if (!mat_a || !mat_b || !mat_b)
+	if (!mat_a || !mat_b || !mat_c)
 	{
+		cout << "Error in init_array" << endl;
+
 		stats.time = -1.0;
 		stats.mflops = -1.0;
 		memset(stats.values, 0, sizeof(stats.values));
+		return;
 	}
 
 	ret = PAPI_start(event_set);
@@ -332,11 +341,14 @@ void on_mult_line_parallel_1(int m, int n, int p, int event_set, Statistics &sta
 	double *mat_b = init_array(n, p, true);
 	double *mat_c = init_array(m, p, false);
 
-	if (!mat_a || !mat_b || !mat_b)
+	if (!mat_a || !mat_b || !mat_c)
 	{
+		cout << "Error in init_array" << endl;
+
 		stats.time = -1.0;
 		stats.mflops = -1.0;
 		memset(stats.values, 0, sizeof(stats.values));
+		return;
 	}
 
 	ret = PAPI_start(event_set);
@@ -397,11 +409,14 @@ void on_mult_line_parallel_2(int m, int n, int p, int event_set, Statistics &sta
 	double *mat_b = init_array(n, p, true);
 	double *mat_c = init_array(m, p, false);
 
-	if (!mat_a || !mat_b || !mat_b)
+	if (!mat_a || !mat_b || !mat_c)
 	{
+		cout << "Error in init_array" << endl;
+
 		stats.time = -1.0;
 		stats.mflops = -1.0;
 		memset(stats.values, 0, sizeof(stats.values));
+		return;
 	}
 
 	ret = PAPI_start(event_set);
@@ -461,7 +476,6 @@ void print_usage(const string &program_name)
 		 << "  <m>           : Number of rows in matrix A\n"
 		 << "  <n>           : Number of columns in matrix A = number of rows in matrix B\n"
 		 << "  <p>           : Number of columns in matrix B\n"
-		 << "  <size>        : Size of matrix\n"
 		 << "  <block-size>  : Size of a block" << endl;
 }
 
@@ -471,7 +485,7 @@ ofstream create_file(const string &file_name)
 	ofstream file(file_name, ios::out | ios::app);
 
 	if (!file_exists) {
-		file << "OPERATION_MODE,SIZE,M,N,P,TIME,L1 DCM,L2 DCM,L3 TCM,MFLOPS" << endl;
+		file << "OPERATION_MODE,M,N,P,BLOCK_SIZE,TIME,L1 DCM,L2 DCM,L3 TCM,MFLOPS" << endl;
 	}
 
 	return file;
