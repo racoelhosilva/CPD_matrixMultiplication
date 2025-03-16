@@ -1,3 +1,29 @@
 \section{Performance Metrics}  \label{section:performance}
+  The performance of the algorithms was evaluated using the following metrics:
 
-MM.
+\begin{itemize}
+  \item \textbf{Time:} The time required to execute the algorithm. This is a crucial metric for comparing the speed and efficiency of multicore implementations.
+  
+  \item \textbf{Speedup:} Defined by the ratio of the sequential execution time \( T_{\text{seq}} \) to the parallel execution time \( T_{\text{par}} \):
+  \[
+    Speedup = \frac{T_{\text{seq}}}{T_{\text{par}}}.
+  \]
+  This indicates how much faster the parallel algorithm runs compared to the sequential version. A higher speedup indicates more effective utilization of parallel resources.
+
+  \item \textbf{Efficiency:} Defined by the ratio of the speedup to the number of threads \(p\):
+  \[
+    Efficiency = \frac{Speedup}{p}.
+  \]
+  This measures how effectively the algorithm scales with an increasing number of threads. An efficiency of of 1 (or 100\%) indicates perfect scaling.
+
+  \item \textbf{FLOPS:} The number of floating-point operations per second, given by the formula 
+  \[
+    FLOPS = \frac{2 \times n^3}{time},
+  \]
+  where \(\ 2 \times n^3\) represents the total number of arithmetic operations (one multiplication and one addition per iteration) in the matrix multiplication, and \(\text{time}\) is the total execution time. Higher FLOPS values indicate better numerical performance.
+
+  \item \textbf{Cache Misses:} To evaluate memory access patterns and their performance impact, we use number of cache miss, such as \(\text{L1\_DCM}\) (Level 1 Data Cache Misses), \(\text{L2\_DCM}\) (Level 2 Data Cache Misses), and \(\text{L3\_TCM}\) (Level 3 Total Cache Misses). Each miss forces the processor to fetch data from a slower cache level or main memory, incurring extra clock cycles. Reducing cache misses can improve time execution by minimizing these wasted cycles.
+\end{itemize}
+
+% Podemos depois por isso ou na introducao ou nos resultados:
+% All algoritms were conducted on university computers with Intel Core i7-9700 with 64KB of L1 cache, 256KB L2 cache and 12MB shared among cores L3 cache, operating under Ubunto and C++ version compiled using g++ with -O2 flag.
