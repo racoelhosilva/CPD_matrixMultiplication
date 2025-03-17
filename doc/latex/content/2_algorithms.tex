@@ -1,10 +1,10 @@
 \section{Algorithms Explanation} \label{section:algorithms}
 
-To see the effects of cache locality and parallel computing on matrix multiplication implementations, we used five different matrix multiplication algorithms, described in this section. These algorithms perform the same operations, ending in the same results, only differing by the order of the operations done, which, as we will see, will have crucial impacts on each algorithm's performance.
+To explore how cache locality and parallel computing affect matrix multiplication, we implemented five different algorithms. Although cache-related behavior is largely independent of the programming language, we additionally provide a Lua implementation to demonstrate that performance differences arise from algorithmic choices rather than language specifics. Although these algorithms perform the same operations and produce the same result, the order of operations can significantly affect memory access patterns and thus performance.
 
 \subsection{Naive Matrix Multiplication}
 
-The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(m,p)$ in the solution, by linear combination of row $m$ of A and column $p$ of C.
+The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(i,j)$ in the solution, by linear combination of row $i$ of A and column $j$ of B.
 
 Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values:
 
@@ -13,13 +13,14 @@ Implementing this algorithm is fairly straighforward, as we only need to iterate
 for (i = 0; i < m; i++)
     for (j = 0; j < p; j++)
         for (k = 0; k < n; k++)
+            C[i][j] += A[i][k] * B[k][j];
 \end{verbatim}
 \caption{Overview of Naive Matrix Multiplication Algorithm}
 \label{fig:algo:naive}
 \end{figure}
 
 As we can expect from the 3 nested loops, the overall time complexity for the matrix multiplication algorithm is $Θ(n^3)$. This time complexity is maintained among all the implemented algorithms, therefore performance impacts are mainle caused by cache accesses and parallelism.
-    
+
 \subsection{Line Matrix Multiplication}
 
 The line matrix multiplication algorithm is very similar to the previous algorithm. The only difference is that the second and third loops switch places:
@@ -29,14 +30,15 @@ The line matrix multiplication algorithm is very similar to the previous algorit
 for (i = 0; i < m; i++)
     for (k = 0; k < n; k++)
         for (j = 0; j < p; j++)
+            C[i][j] += A[i][k] * B[k][j];
 \end{verbatim}
 \caption{Overview of Line Matrix Multiplication Algorithm}
 \label{fig:algo:line}
 \end{figure}
 
-In practice, the difference between this and the previous approach is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line.
+In practice, the difference between this and the previous approach is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line. Because matrices are stored in row-major format, accessing data consecutively along a row can improve cache locality.
 
-Although the correctness and overall time complexity of this algorithm remains the same, due to the way the matrices are stored and the memory is accesed, this allows for fewer cache misses, leading to performance improvements.
+Although the correctness and overall time complexity of this algorithm remains the same. 
 
 \subsection{Block Matrix Multiplication}
 
@@ -50,12 +52,13 @@ for (I = 0; I < m; I += block_size)
             for (i = I; i < min(I + block_size, m); i++)
                 for (k = K; k < min(K + block_size, n); k++)
                     for (j = J; j < min(J + block_size, p); j++)
+                        C[i][j] += A[i][k] * B[k][j];
 \end{verbatim}
 \caption{Overview of Block Matrix Multiplication Algorithm}
 \label{fig:algo:block}
 \end{figure}
 
-The main idea is that now, we have divided the matrix into smaller blocks and the operations are performed block by block. Again, due to the way the memory is accessed, this leads to better performance and less cache misses because the local block information is already stored in cache.
+The main idea is that now, we have divided the matrices into smaller blocks and the operations are performed block by block. This approach can enhance cache locality by keeping calculations within a more localized area, potentially improving overall efficiency.
 
 \subsection{Parallel Matrix Multiplication}
 
