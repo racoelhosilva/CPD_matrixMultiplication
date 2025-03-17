@@ -83,10 +83,12 @@ local function on_mult_line(m, n, p)
 end
 
 local function print_usage()
-    print("Usage: luajit matrixproduct.lua <output-file> [<op> <size>]")
-    print("  <output> : Output filename")
-    print("  <op>     : Operation mode: 1, 2")
-    print("  <size>   : Size of matrix")
+    print("Usage: luajit matrixproduct.lua <output-file> [(<op> <m> <n> <p>)]")
+    print("  <output-file> : Output filename")
+    print("  <op>          : Operation mode: 1, 2")
+    print("  <m>           : Number of rows in matrix A")
+    print("  <n>           : Number of columns in matrix A = number of rows in matrix B")
+    print("  <p>           : Number of columns in matrix B")
 end
 
 local function create_file(filename)
@@ -104,7 +106,7 @@ local function create_file(filename)
             error("Failed to create file")
             return nil
         end
-        file:write("OPERATION_MODE,SIZE,BLOCK_SIZE,TIME,MFLOPS\n")
+        file:write("OPERATION_MODE,M,N,P,TIME,MFLOPS\n")
     end
 
     return file
@@ -114,18 +116,18 @@ local function is_integer(num)
     return num == math.floor(num)
 end
 
-local function execute_operation(op, size, file)
+local function execute_operation(op, m, n, p, file)
     local time
 
     if op == 1 then
-        time = on_mult(size, size, size)
+        time = on_mult(m, n, p)
     elseif op == 2 then
-        time = on_mult_line(size, size, size)
+        time = on_mult_line(m, n, p)
     end
 
     print("Time:", time, "seconds")
-    local mflops = (2 * (size ^ 3) / time) / 1e6
-    file:write(table.concat({op, size, 0.0, time, mflops}, ",") .. "\n")
+    local mflops = (2 * m * n * p / time) / 1e6
+    file:write(table.concat({op, m, n, p, time, mflops}, ",") .. "\n")
 end
 
 local function main()
@@ -140,9 +142,9 @@ local function main()
         return
     end
 
-    local op, size
+    local op, m, n, p
     if #arg >= 2 then
-        if #arg ~= 3 then
+        if #arg ~= 5 then
             print_usage()
             return
         end
@@ -153,13 +155,25 @@ local function main()
             return
         end
 
-        size = tonumber(arg[3])
-        if size == nil or not is_integer(size) then
+        m = tonumber(arg[3])
+        if m == nil or not is_integer(m) then
             print_usage()
             return
         end
 
-        execute_operation(op, size, file)
+        n = tonumber(arg[4])
+        if n == nil or not is_integer(n) then
+            print_usage()
+            return
+        end
+
+        p = tonumber(arg[5])
+        if p == nil or not is_integer(p) then
+            print_usage()
+            return
+        end
+
+        execute_operation(op, m, n, p, file)
 
     else
         while true do
@@ -183,19 +197,43 @@ local function main()
                 break
             end
 
-            io.write("Matrix size ? ")
-            size = io.read()
-            if size == nil then
+            io.write("Number of rows in matrix A ? ")
+            m = io.read()
+            if m == nil then
                 break
             end
 
-            size = tonumber(size)
-            if size == nil or not is_integer(size) or size <= 0 then
+            m = tonumber(m)
+            if m == nil or not is_integer(m) or m <= 0 then
                 print("Invalid size")
                 goto continue
             end
 
-            execute_operation(op, size, file)
+            io.write("Number of columns in matrix A = number of rows in matrix B ? ")
+            n = io.read()
+            if n == nil then
+                break
+            end
+
+            n = tonumber(n)
+            if n == nil or not is_integer(n) or n <= 0 then
+                print("Invalid size")
+                goto continue
+            end
+
+            io.write("Number of columns in matrix B ? ")
+            p = io.read()
+            if p == nil then
+                break
+            end
+
+            p = tonumber(p)
+            if p == nil or not is_integer(p) or p <= 0 then
+                print("Invalid size")
+                goto continue
+            end
+
+            execute_operation(op, m, n, p, file)
 
             ::continue::
         end
