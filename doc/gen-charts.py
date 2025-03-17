@@ -103,10 +103,10 @@ def plot_naive_line_cache(df: pd.DataFrame) -> None:
     with plot_theme:
         plt.figure()
 
-        plt.plot(naive_df['M'], naive_df['L1 DCM'] / 1e9, label='Naive L1 DCM', marker='.')
-        plt.plot(naive_df['M'], naive_df['L2 DCM'] / 1e9, label='Naive L2 DCM', marker='.')
-        plt.plot(line_df['M'], line_df['L1 DCM'] / 1e9, label='Line L1 DCM', marker='.')
-        plt.plot(line_df['M'], line_df['L2 DCM'] / 1e9, label='Line L2 DCM', marker='.')
+        plt.plot(naive_df['M'], naive_df['L1 DCM'] / 1e9, label='Naive L1', marker='.')
+        plt.plot(naive_df['M'], naive_df['L2 DCM'] / 1e9, label='Naive L2', marker='.')
+        plt.plot(line_df['M'], line_df['L1 DCM'] / 1e9, label='Line L1', marker='.')
+        plt.plot(line_df['M'], line_df['L2 DCM'] / 1e9, label='Line L2', marker='.')
 
         plt.xticks(range(600, 3001, 400))
         plt.ylim(bottom=0)
