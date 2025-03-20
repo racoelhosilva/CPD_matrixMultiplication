@@ -56,7 +56,7 @@
 \renewcommand{\footrulewidth}{0.4pt}
 \setlength{\footskip}{36pt}
 \fancyfoot[L]{\small{Parallel and Distributed Computing}}
-\fancyfoot[R]{\thepage /\pageref*{LastPage}}
+\fancyfoot[R]{\thepage /\pageref{LastMainPage}}
 
 \include{content/0_cover}
 
@@ -68,9 +68,11 @@
 \input{content/3_performance}
 \input{content/4_results}
 \input{content/5_conclusion}
+\label{LastMainPage}
 
 \clearpage
 
+\fancyfoot[R]{}
 \input{content/6_appendix}
 
 %\bibliographystyle{plain}
