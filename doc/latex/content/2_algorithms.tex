@@ -4,9 +4,9 @@ To explore how cache locality and parallel computing affect matrix multiplicatio
 
 \subsection{Naive Matrix Multiplication} \label{section:algorithms:naive}
 
-The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices: $A \times B = C$, where $A(m, n)$, $B(n, p)$ and $C(m, p)$, obtains the sum of a cell $(i,j)$ in the solution, by linear combination of row $i$ of A and column $j$ of B.
+The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices, $A \times B = C$, where $A$ is a matrix $m \times n$, $B$ is $n \times p$ and $C$ is $m \times p$, obtains each cell $(i, j)$ in the solution by doing the dot product of row $i$ of A with column $j$ of B.
 
-Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values as shown in \hyperref[fig:algo:naive]{Figure \ref{fig:algo:naive}}.
+Implementing this algorithm is fairly straightforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values as shown in \hyperref[fig:algo:naive]{Figure \ref{fig:algo:naive}}.
 
 \begin{figure}[ht!]
 \begin{verbatim}
@@ -23,9 +23,9 @@ As we can expect from the 3 nested loops, the overall time complexity for the ma
 
 \subsection{Line Matrix Multiplication}
 
-The line matrix multiplication algorithm is very similar to the \hyperref[section:algorithms:naive]{previous algorithm}. The difference is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line. Since matrices are stored in row-major format, accessing data consecutively along a row can improve cache locality, and, consequently reduce the time execution.
+The line matrix multiplication algorithm is very similar to the \hyperref[section:algorithms:naive]{previous algorithm}. The difference is that, instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the dot product line by line. Since matrices are stored in a row-major format, accessing data consecutively along a row can improve cache locality, and, consequently reduce execution time.
 
-The only difference is that the second and third loops switch places as shown in figure \ref{fig:algo:line}.
+The only difference is that the second and third loops switch places, as shown in figure \ref{fig:algo:line}.
 
 \begin{figure}[ht!]
 \begin{verbatim}
@@ -40,7 +40,7 @@ for (i = 0; i < m; i++)
 
 \subsection{Block Matrix Multiplication}
 
-The last single-core algorithm implemented is the block matrix multiplication algorithm. This approach expands on top of the previous one and the same logic applied to calculate subresults line by line is now used to calculate the solution block by block. The main idea is that now, we have divided the matrices into smaller blocks and the operations are performed block by block. This approach can further enhance cache locality by keeping calculations within a more localized area, potentially improving overall efficiency.
+The last single-core algorithm implemented is the block matrix multiplication algorithm. This approach expands on top of the previous one and the same logic applied to calculate sub-results line by line is now used to calculate the solution block-by-block. The main idea is that, now, we have divided the matrices into smaller blocks and the operations are performed block by block. This approach can further enhance cache locality by keeping calculations within a more localized area for both matrices, potentially improving overall efficiency.
 
 For this, we need 6 nested loops as shown in \hyperref[fig:algo:block]{Figure \ref{fig:algo:block}}.
 
@@ -62,7 +62,7 @@ for (I = 0; I < m; I += block_size)
 
 \subsection{Parallel Matrix Multiplication}
 
-Besides the previous three single-core algorithms, we also implemented two variations of the line algorithm using OpenMP API for parallel programming in C++. The next sections show an explanation and overview of the implementations.
+Besides the previous three single-core algorithms, we also implemented two variations of the line algorithm using the OpenMP API for parallel programming in C++. The next sections show an explanation and overview of the implementations.
 
 \subsubsection{First Version}
 
@@ -84,7 +84,7 @@ for (i = 0; i < m; i++)
 
 \subsubsection{Second Version}
 
-The second approach aims to parallelize the innemost loop \verb#j# of the line algorithm. The thread pool will work on the same row at the same time but on different columns. In this case, the threads need to be synchronized every time the inner loop finishes, which happens $i\times k$ times, leading to some overhead.
+The second approach aims to parallelize the innermost loop \verb#j# of the line algorithm. The thread pool will work on the same row at the same time but on different columns. In this case, the threads need to be synchronized every time the inner loop finishes, which happens $i\times k$ times, leading to some overhead.
 
 For this, we used OpenMP's \verb#parallel# region, \verb#for# and \verb#private# variable pragmas, as it can be seen in Figure \ref{fig:algo:parallel2}.
 

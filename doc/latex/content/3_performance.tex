@@ -2,8 +2,8 @@
   The performance of the algorithms described in the \hyperref[section:algorithms]{previous sections} was evaluated using the following metrics:
 
 \begin{itemize}
-  \item \textbf{Time:} The time required to execute the algorithm. This is a crucial metric for comparing the speed and efficiency of multicore implementations.
-  
+  \item \textbf{Time:} The time required to execute the algorithm. This is a crucial metric for comparing the speed and efficiency of multi-core implementations.
+
   \item \textbf{Speedup:} Defined by the ratio of the sequential execution time $T_{\text{seq}}$ to the parallel execution time $T_{\text{par}}$:
   \[
     \text{Speedup} = \frac{t_{\text{seq}}}{t_{\text{par}}}.
@@ -16,11 +16,11 @@
   \]
   This measures how effectively the algorithm scales with an increasing number of threads. An efficiency of 1 (or 100\%) indicates perfect scaling.
 
-  \item \textbf{FLOPS:} The number of floating-point operations per second, given by the formula 
+  \item \textbf{FLOPS:} The number of floating-point operations per second, given by the formula
   \[
     \text{FLOPS} = \frac{2 \times n^3}{t},
   \]
   where \(\ 2 \times n^3\) represents the total number of arithmetic operations (one multiplication and one addition per iteration) in the matrix multiplication, and $t$ is the total execution time. Higher FLOPS values indicate more numerical computations for the same amount of time.
 
-  \item \textbf{Cache Misses:} To evaluate memory access patterns and their performance impact, we use number of cache miss, such as \verb#L1_DCM# (Level 1 Data Cache Misses), \verb#L2_DCM# (Level 2 Data Cache Misses), and \verb#L3_TCM# (Level 3 Total Cache Misses). Each cache miss forces the processor to fetch data from a slower cache level or main memory, incurring extra clock cycles. Reducing cache misses can improve time execution by minimizing these wasted cycles.
+  \item \textbf{Cache Misses:} To evaluate memory access patterns and their performance impact, we use the number of cache misses, such as \verb#L1_DCM# (Level 1 Data Cache Misses), \verb#L2_DCM# (Level 2 Data Cache Misses), and \verb#L3_TCM# (Level 3 Total Cache Misses). Each cache miss forces the processor to fetch data from a slower cache level or main memory, incurring extra clock cycles. Reducing cache misses can improve time execution by minimizing these wasted cycles.
 \end{itemize}

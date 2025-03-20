@@ -1,38 +1,38 @@
 \section{Results and Analysis} \label{section:results}
 
-To benchmark the \hyperref[section:algorithms]{implementations previously discussed}, we executed the test set shown below 5 times, storing the results for analysis. All algoritms were conducted on university computers with Intel Core i7-9700 with 64KB of L1 cache, 256KB L2 cache and 12MB shared among cores L3 cache, operating under Ubuntu and C++ version compiled using g++ with -O2 flag. The graphs produced are available in the \hyperref[section:appendix]{Appendix section}.
+To benchmark the \hyperref[section:algorithms]{implementations previously discussed}, we executed the test set shown below 5 times, storing the results for analysis. All algorithms were conducted on a university computer, with an Intel Core i7-9700 with 64KB of L1 cache, 256KB L2 cache and 12MB L3 cache shared among cores (more info in the \hyperref[section:appendix:pc_specs]{Appendix section}), operating under Ubuntu and C++ version compiled using \verb|g++| with the \verb|-O2| flag. The charts produced are available in the \hyperref[section:appendix]{Appendix section}.
 
 \begin{itemize}
-    \item Naive, Line and Parallel implementations (across both C++ and Lua) with input matrices from $600 \times 600$ to $3000 \times 3000$ with size increments of $400$.
-    \item Line, Block and Parallel implementations (in C++) with input matrices from $4096 \times 4096$ to $10240 \times 10240$ with size increments of $2048$, with block sizes $128$, $256$ and $512$.
+    \item Naive, Line and Parallel implementations (across both C++ and Lua) with input matrices from $600 \times 600$ to $3000 \times 3000$ in size increments of $400$.
+    \item Line, Block and Parallel implementations (in C++) with input matrices from $4096 \times 4096$ to $10240 \times 10240$ in size increments of $2048$, with block sizes $128$, $256$ and $512$.
 \end{itemize}
 
-\subsection{Performance Evaluation of a Single Core Implementation}
+\subsection{Performance Evaluation of Single Core Implementations}
 
-The first comparison in the single core implementations is between the naive and the line approach, which was evaluated both in C++ and Lua. The results show that, independently of the language of implementation, the execution times are smaller for the latter. It can also be observed that execution time is faster in C++ when compared to Lua. Evidence for this can be seen in graphs \ref{fig:chart:naive-line-time} and \ref{fig:chart:naive-line-flops}.
+The first comparison in the single core implementations, evaluated both in C++ and Lua, is between the naive and the line approach. The results show that, independently of the language of implementation, the execution times are smaller for the latter. It can also be observed that execution time is faster in C++ when compared to Lua. Evidence for this can be seen in graphs \ref{fig:chart:naive-line-time} and \ref{fig:chart:naive-line-flops}.
 
-The main reason why the line implementation is more performant than the naive approach is due to sequential data processing, which reduces cache misses, as shown in graph \ref{fig:chart:naive-line-cache}. Due to the prefetching mechanism, when one memory address is accessed, adjacent data is also loaded into memory. This ensures that subsequent memory accesses hit the cache instead of requiring slower memory fetches.
+The main reason why the line implementation is more performant than the naive approach is due to sequential data processing, which reduces cache misses, as shown in graph \ref{fig:chart:naive-line-cache}. Due to the prefetching mechanism, when one memory address is accessed, adjacent data is also loaded into memory. This promotes cache locality, ensuring that subsequent memory accesses hit the cache instead of requiring slower memory fetches.
 
 Having established the advantages of the line implementation, we can try to further optimize the code to reduce cache misses during memory accesses. The best approach for this is to subdivide the matrix calculation and perform it in small blocks, limiting the memory region being processed. We decided to test this with different matrix and block sizes, and the results can be consulted in figures \ref{fig:chart:line-block-time}, \ref{fig:chart:line-block-flops}, \ref{fig:chart:line-block-l1}, \ref{fig:chart:line-block-l2} and \ref{fig:chart:line-block-l3}.
 
-Overall, the block algorithms are proportionally better than the line algorithms in relation to the L1 and L2 cache misses, as shown in figures \ref{fig:chart:line-block-time}, \ref{fig:chart:line-block-l1} and \ref{fig:chart:line-block-l2}. 
+Overall, the block algorithms are proportionally better than the line algorithms in relation to the L1 and L2 cache misses, as shown in figures \ref{fig:chart:line-block-time}, \ref{fig:chart:line-block-l1} and \ref{fig:chart:line-block-l2}.
 
-However, this is not the case for matrix size of $8192 \times 8192$, where the block algorithms with block sizes of $256$ and $512$ suffer a spike in execution time (and consequent decrease in Mflops), shown in charts \ref{fig:chart:line-block-time} and \ref{fig:chart:line-block-flops}. These results were caused by the number of cache misses that occur on the L3 cache, suggesting that these block sizes don't fit well in this cache. 
+However, this is not the case for matrix size of $8192 \times 8192$, where the block algorithms with block sizes of $256$ and $512$ suffer a spike in execution time (and consequent decrease in Mflops), shown in charts \ref{fig:chart:line-block-time} and \ref{fig:chart:line-block-flops}. These results were caused by the number of cache misses that occur on the L3 cache, suggesting that these block sizes don't fit well in this cache.
 
-According to the memory hierarchy, the cost cache misses on L3 is much higher than L1 and L2, because it requires data to be fetched from an even lower level, therefore, the total execution is higher than the expected. To verify this, we ran some tests while measuring the \verb#L3_TCM# and the results are shown in \ref{fig:chart:line-block-l3}. 
+According to the memory hierarchy, the cost cache misses on L3 is much higher than L1 and L2, because it requires data to be fetched from an even lower level, therefore, the total execution is higher than the expected. To verify this, we ran extra tests to measure the \verb#L3_TCM# and the results are shown in \ref{fig:chart:line-block-l3}.
 
-\subsection{Performance Evaluation of a Multi-Core Implementation}
+\subsection{Performance Evaluation of Multi-Core Implementations}
 
 Besides the single core algorithms, we also implemented two multi-core approaches, based on the line algorithm, using OpenMP. As expected, both multi-core algorithms have better overall performance when compared to the single core line approach.
 
 By distributing the operation load across different processing units, these approaches are able to perform a larger number of floating point operations per second and, consequently, have smaller execution times, as we can see in graphs \ref{fig:chart:parallel-time} and \ref{fig:chart:parallel-flops}.
 
-Nonetheless, the multi-core implementations follow different ideas, as discussed in the \hyperref[section:algorithms]{Algorithms section} and have substantially different results. While still being faster than the sequential code, the first implementation is able to execute 3 to 4 times more Mflops than the second one, as seen in \ref{fig:chart:parallel-flops}.
+Nonetheless, the multi-core implementations follow different ideas, as discussed in the \hyperref[section:algorithms]{Algorithms section}, and have substantially different results. While still being faster than the sequential code, the first implementation is able to execute 3 to 4 times more Mflops than the second one, as seen in \ref{fig:chart:parallel-flops}.
 
-While both take advantage of parallelism, the second approach has an associated synchronization overhead after each iteration of the inner parallelized loop, which occurs $\text{size}^2$ times, leading to sizeable overheads increasing quadratically with matrix size. Nonetheless, it will still be faster than the single-core algorithm because the number of operations performed by each thread also grows.
+While both take advantage of parallelism, the second approach has an associated synchronization overhead after each iteration of the inner parallelized loop, which occurs $size^2$ times, leading to sizeable overheads increasing quadratically with matrix size. Nonetheless, it will still be faster than the single-core algorithm because the number of operations performed by each thread also grows.
 
-As a result of this, we observe faster execution times for the first parallel approach which uses parallelism on the outermost loop, only requiring synchronization in the end. The comparison between these two algorithms is clear when analyzing their speedup and efficiency. 
+As a result of this, we observe faster execution times for the first parallel approach which uses parallelism on the outermost loop, only requiring synchronization in the end. The comparison between these two algorithms is clear when analyzing their speedup and efficiency.
 
-While the second approach has a speedup of slightly over $1.0\times$ for matrices over around $1000 \times 1000$ and efficiency below $0.2$, the first implementation is at least $4\times$ faster (usually even around $5\times$) and has an efficiency over $0.5$. These conclusions can be seen in the figures \ref{fig:chart:parallel-speedup} and \ref{fig:chart:parallel-efficiency}.
+While the second approach has a speedup of slightly over $1.0\times$ for matrices over around $1000 \times 1000$ and efficiency below $0.2$, the first implementation is at least $4\times$ faster (usually even around $5\times$) and has an efficiency over $0.5$. These conclusions can be seen in the charts \ref{fig:chart:parallel-speedup} and \ref{fig:chart:parallel-efficiency}.
 
 
