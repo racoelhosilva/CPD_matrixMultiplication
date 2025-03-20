@@ -19,7 +19,11 @@ The main reason why the line implementation is more performant than the naive ap
 Having established the advantages of the line implementation, we can try to further optimize the code to reduce cache misses during memory accesses. The best approach for this is to further subdivide the matrix calculation and perform it in small blocks. Theoretically, the best block size would be $\sqrt {size}$, however, we decided to test with different matrix and block sizes.
 The results of our benchmarks can be consulted in figures \ref{fig:chart:line-block-time} and \ref{fig:chart:line-block-flops}.
 
-% TODO: Complete analysis based on new data
+As we can see in graph \ref{fig:chart:line-block-time}, the execution times for the 4 algorithms start very similar for the smallest matrix size, but then, for the second measurement all block sizes run faster than the line algorithm. 
+
+We would expect this trend to continue on as we increase the matrix size, however, for matrix size of $8192 \times 8192$, the block algorithms with block sizes of $256$ and $512$ suffer a spike in execution time (and consequent decrease in Mflops). We believe these results were caused by the number of cache misses that occur on the L3 cache. To verify this, we ran some tests while measuring the \verb#L3TCM# and the results are shown in \ref{fig:chart:line-block-l3} (figures \ref{fig:chart:line-block-l1} and \ref{fig:chart:line-block-l2} depict the same measures for the other caches). 
+
+Finally, for the larger block sizes, the behavior aligns with the expectations and all the block algorithms are faster than the line algorithm.
 
 \subsection{Performance Evaluation of a Multi-Core Implementation}
 
