@@ -8,7 +8,7 @@ The \textit{naive} matrix multiplication algorithm is closely related to its han
 
 Implementing this algorithm is fairly straighforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{verbatim}
 for (i = 0; i < m; i++)
     for (j = 0; j < p; j++)
@@ -25,7 +25,7 @@ As we can expect from the 3 nested loops, the overall time complexity for the ma
 
 The line matrix multiplication algorithm is very similar to the previous algorithm. The only difference is that the second and third loops switch places:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{verbatim}
 for (i = 0; i < m; i++)
     for (k = 0; k < n; k++)
@@ -38,13 +38,13 @@ for (i = 0; i < m; i++)
 
 In practice, the difference between this and the previous approach is that instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the linear combination line by line. Because matrices are stored in row-major format, accessing data consecutively along a row can improve cache locality.
 
-Although the correctness and overall time complexity of this algorithm remains the same. 
+Although the correctness and overall time complexity of this algorithm remains the same.
 
 \subsection{Block Matrix Multiplication}
 
 The last single-core algorithm implemented is the block matrix multiplication algorithm. This approach expands on top of the previous one and the same logic applied in calculating subresults line by line is now used to calculate the solution block by block. For this, we need 6 nested loops:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{verbatim}
 for (I = 0; I < m; I += block_size)
     for (K = 0; K < n; K += block_size)
@@ -70,7 +70,7 @@ The first approach aims to parallelize the outermost loop (i) of the line algori
 
 For this, we used OpenMP's \verb#parallel for# and \verb#private# variable pragmas:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{verbatim}
 #pragma omp parallel for private(i, k, j)
 for (i = 0; i < m; i++)
@@ -87,7 +87,7 @@ The second approach aims to parallelize the innemost loop (j) of the line algori
 
 For this, we used OpenMP's \verb#parallel# region, \verb#for# and \verb#private# variable pragmas:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{verbatim}
 #pragma omp parallel private(i, k)
 for (i = 0; i < m; i++)
