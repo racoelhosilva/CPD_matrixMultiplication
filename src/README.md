@@ -1,24 +1,44 @@
-# Usage
+# Description
 
-1. Install LuaJIT through your package manager, or run the following commands if you're using a FEUP PC:
+Source code for the first assignment of the Parallel and Distributed Computing course. The program calculates the product of two matrices with the given sizes, in both C++ and Lua.
+
+# Setup
+
+1. Install PAPI and OpenMP
+2. Install LuaJIT through your package manager, or run the following commands if you're using a FEUP PC:
 
 ```bash
 ./setup-luajit.sh
-. ~/.bashrc  # Sync terminal with changes, to have `luajit` in PATH
+. ~/.bashrc        # Sync terminal with changes, to have `luajit` in PATH
 ```
 
-2. Execute one of the following sequence of commands:
+# Usage
+
+1. To run a matrix product, run one of the following commands:
 
 ```bash
-# Run C++ program
-g++ -std=c++17 -O2 matrixproduct.cpp -o matrixproduct -lpapi  # Make sure you have PAPI installed
-./matrixproduct <op> <size> <output> [blockSize]
+# In C++
+g++ -O2 matrixproduct.cpp -o matrixproduct -lpapi -fopenmp     # Compile
+# Use the flag -DL3 to measure L3 cache misses
+./matrixproduct <output-file> <op> <m> <n> <p> [<block-size>]
 
-# Run Lua program
-luajit matrixproduct.lua <op> <size> <output>
-
-# Run pile of tests
-./run.sh
+# In Lua
+luajit matrixproduct.lua <output-file> <op> <m> <n> <p>
 ```
 
-<!-- TODO: Check if these are the commands we want to execute in the end -->
+2. To run the program in interactive mode, run one of the following commands:
+
+```bash
+# In C++
+g++ -O2 matrixproduct.cpp -o matrixproduct -lpapi -fopenmp     # Compile
+./matrixproduct <output-file>
+
+# In Lua
+luajit matrixproduct.lua <output-file>
+```
+
+3. To run the pile of tests, run the following command:
+
+```bash
+./run.sh  # Use run-l3.sh for running the relevant tests with L3 cache misses
+```
