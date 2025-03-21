@@ -44,8 +44,6 @@ The last single-core algorithm implemented is the block matrix multiplication al
 
 For this, we need 6 nested loops as shown in \hyperref[fig:algo:block]{Figure \ref{fig:algo:block}}.
 
-\clearpage
-
 \begin{figure}[ht!]
 \begin{verbatim}
 for (I = 0; I < m; I += block_size)
@@ -66,7 +64,7 @@ Besides the previous three single-core algorithms, we also implemented two varia
 
 \subsubsection{First Version}
 
-The first approach aims to parallelize the outermost loop \verb#i# of the line algorithm. There will be a division of \verb#i# values between the different threads so that each one works on separate rows at the same time (they also get their own \verb#k# and \verb#j# variables). For this approach, the threads all run independently and then synchronize once when the loop finishes.
+The first approach aims to parallelize the outermost loop \verb#i# of the line algorithm. There will be a division of \verb#i# values between the different threads so that each one works on separate rows at the same time (they also get their own \verb#k# and \verb#j# variables). For this approach, the threads all run independently and then synchronize once, when the loop finishes.
 
 For this, we used OpenMP's \verb#parallel for# and \verb#private# variable pragmas, as shown in Figure \ref{fig:algo:parallel1}.
 
