@@ -29,15 +29,16 @@ build() {
     cp -rf latex/* build
 
     cd "$ROOT/build" || exit
-    xelatex main  # Generate auxiliary files
-    bibtex main   # Generate bibliographic references
-    xelatex main  # Update auxiliary files
-    xelatex main  # Generate final PDF
+    xelatex -interaction=nonstopmode main  # Generate auxiliary files
+    bibtex main                            # Generate bibliographic references
+    xelatex -interaction=nonstopmode main  # Update auxiliary files
+    xelatex -interaction=nonstopmode main  # Generate final PDF
+
     if [ $? -ne 0 ]; then
         printf "\033[31m[fail] an error occurred while compiling the project\033[0m\n"
         exit 1
     fi
-    
+
     cd "$ROOT" || exit
     cp build/main.pdf report.pdf
     printf "\033[36m[info] Report compiled successfully\033[0m\n"

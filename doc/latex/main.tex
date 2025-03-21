@@ -1,9 +1,12 @@
 % Page dimensions and margins
 \documentclass[12pt, a4paper]{article}
-\usepackage[a4paper, left=35mm, right=35mm, top=40mm, bottom=40mm]{geometry}
+\usepackage[a4paper, left=30mm, right=30mm, top=30mm, bottom=30mm]{geometry}
 
 % Language
 \usepackage[english]{babel}
+
+% Math
+\usepackage{amsmath}
 
 % Fonts
 \usepackage{fontspec}
@@ -28,9 +31,24 @@
 % Images and figures
 \usepackage{graphicx}
 \graphicspath{ {./img/} }
+\usepackage{caption}
 
 % Indent first paragraphs
 \usepackage{indentfirst}
+
+% Reduce figcaption space
+\setlength{\belowcaptionskip}{-5pt}
+\setlength{\abovecaptionskip}{-5pt}
+
+% Code Segments
+\usepackage{xcolor}
+\usepackage{minted}
+\newfontfamily\courier{JetBrains Mono}[NFSSFamily=jetbrains]
+\setminted{
+    fontfamily=jetbrains,
+    fontsize=\scriptsize,
+    breaklines
+}
 
 % Glossary
 % \usepackage{glossaries}
@@ -48,17 +66,26 @@
 \renewcommand{\footrulewidth}{0.4pt}
 \setlength{\footskip}{36pt}
 \fancyfoot[L]{\small{Parallel and Distributed Computing}}
-\fancyfoot[R]{\thepage /\pageref*{LastPage}}
+\fancyfoot[R]{\thepage /\pageref{LastMainPage}}
 
-\include{content/cover}
+\include{content/0_cover}
 
 \tableofcontents
 \clearpage
 
-\include{content/introduction}
-% ...
+\input{content/1_introduction}
+\input{content/2_algorithms}
+\input{content/3_performance}
+\input{content/4_results}
+\input{content/5_conclusion}
+\label{LastMainPage}
 
-\bibliographystyle{plain}
-\bibliography{refs}
+\clearpage
+
+\fancyfoot[R]{}
+\input{content/6_appendix}
+
+%\bibliographystyle{plain}
+%\bibliography{refs}
 
 \end{document}

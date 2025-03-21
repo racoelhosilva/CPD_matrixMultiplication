@@ -1,0 +1,100 @@
+\section{Algorithms Explanation} \label{section:algorithms}
+
+To explore how cache locality and parallel computing affect matrix multiplication, we implemented five different algorithms. Although cache-related behavior is largely independent of the programming language, we additionally developed Lua implementations to demonstrate that performance differences arise from algorithmic choices rather than language specifics. In spite of these algorithms performing the same operations and producing the same result, the order of operations can significantly affect memory access patterns and thus performance.
+
+\subsection{Naive Matrix Multiplication} \label{section:algorithms:naive}
+
+The \textit{naive} matrix multiplication algorithm is closely related to its hand calculation. This method for multiplication of two matrices, $A \times B = C$, where $A$ is a matrix $m \times n$, $B$ is $n \times p$ and $C$ is $m \times p$, obtains each cell $(i, j)$ in the solution by doing the dot product of row $i$ of A with column $j$ of B.
+
+Implementing this algorithm is fairly straightforward, as we only need to iterate through every row and column of the solution matrix, and, for each cell, perform the linear combination of the values as shown in \hyperref[fig:algo:naive]{Figure \ref{fig:algo:naive}}.
+
+\begin{figure}[ht!]
+\begin{verbatim}
+for (i = 0; i < m; i++)
+    for (j = 0; j < p; j++)
+        for (k = 0; k < n; k++)
+            C[i][j] += A[i][k] * B[k][j];
+\end{verbatim}
+\caption{Overview of Naive Matrix Multiplication Algorithm}
+\label{fig:algo:naive}
+\end{figure}
+
+As we can expect from the 3 nested loops, the overall time complexity for the matrix multiplication algorithm is $\Theta (n^3)$. This time complexity is maintained among all the implemented algorithms, therefore performance impacts are mainly caused by cache accesses and parallelism.
+
+\subsection{Line Matrix Multiplication}
+
+The line matrix multiplication algorithm is very similar to the \hyperref[section:algorithms:naive]{previous algorithm}. The difference is that, instead of calculating the result matrix cell by cell, we instead focus on calculating and storing some terms of the dot product line by line. Since matrices are stored in a row-major format, accessing data consecutively along a row can improve cache locality, and, consequently reduce execution time.
+
+The only difference is that the second and third loops switch places, as shown in figure \ref{fig:algo:line}.
+
+\begin{figure}[ht!]
+\begin{verbatim}
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        for (j = 0; j < p; j++)
+            C[i][j] += A[i][k] * B[k][j];
+\end{verbatim}
+\caption{Overview of Line Matrix Multiplication Algorithm}
+\label{fig:algo:line}
+\end{figure}
+
+\subsection{Block Matrix Multiplication}
+
+The last single-core algorithm implemented is the block matrix multiplication algorithm. This approach expands on top of the previous one and the same logic applied to calculate sub-results line by line is now used to calculate the solution block-by-block. The main idea is that, now, we have divided the matrices into smaller blocks and the operations are performed block by block. This approach can further enhance cache locality by keeping calculations within a more localized area for both matrices, potentially improving overall efficiency.
+
+For this, we need 6 nested loops as shown in \hyperref[fig:algo:block]{Figure \ref{fig:algo:block}}.
+
+\begin{figure}[ht!]
+\begin{verbatim}
+for (I = 0; I < m; I += block_size)
+    for (K = 0; K < n; K += block_size)
+        for (J = 0; J < p; J += block_size)
+            for (i = I; i < min(I + block_size, m); i++)
+                for (k = K; k < min(K + block_size, n); k++)
+                    for (j = J; j < min(J + block_size, p); j++)
+                        C[i][j] += A[i][k] * B[k][j];
+\end{verbatim}
+\caption{Overview of Block Matrix Multiplication Algorithm}
+\label{fig:algo:block}
+\end{figure}
+
+\subsection{Parallel Matrix Multiplication}
+
+Besides the previous three single-core algorithms, we also implemented two variations of the line algorithm using the OpenMP API for parallel programming in C++. The next sections show an explanation and overview of the implementations.
+
+\subsubsection{First Version}
+
+The first approach aims to parallelize the outermost loop \verb#i# of the line algorithm. There will be a division of \verb#i# values between the different threads so that each one works on separate rows at the same time (they also get their own \verb#k# and \verb#j# variables). For this approach, the threads all run independently and then synchronize once, when the loop finishes.
+
+For this, we used OpenMP's \verb#parallel for# and \verb#private# variable pragmas, as shown in Figure \ref{fig:algo:parallel1}.
+
+\begin{figure}[ht!]
+\begin{verbatim}
+#pragma omp parallel for private(i, k, j)
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        for (j = 0; j < p; j++)
+            C[i][j] += A[i][k] * B[k][j];
+\end{verbatim}
+\caption{Overview of First Parallel Matrix Multiplication Algorithm}
+\label{fig:algo:parallel1}
+\end{figure}
+
+\subsubsection{Second Version}
+
+The second approach aims to parallelize the innermost loop \verb#j# of the line algorithm. The thread pool will work on the same row at the same time but on different columns. In this case, the threads need to be synchronized every time the inner loop finishes, which happens $i\times k$ times, leading to some overhead.
+
+For this, we used OpenMP's \verb#parallel# region, \verb#for# and \verb#private# variable pragmas, as it can be seen in Figure \ref{fig:algo:parallel2}.
+
+\begin{figure}[ht!]
+\begin{verbatim}
+#pragma omp parallel private(i, k)
+for (i = 0; i < m; i++)
+    for (k = 0; k < n; k++)
+        #pragma omp for private(j)
+        for (j = 0; j < p; j++)
+            C[i][j] += A[i][k] * B[k][j];
+\end{verbatim}
+\caption{Overview of Second Parallel Matrix Multiplication Algorithm}
+\label{fig:algo:parallel2}
+\end{figure}
