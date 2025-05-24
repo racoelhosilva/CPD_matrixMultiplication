@@ -1,8 +1,12 @@
-# Description
+# CPD Assignment 1
+
+[Final Report](../doc/report.pdf)
+
+## Description
 
 Source code for the first assignment of the Parallel and Distributed Computing course. The program calculates the product of two matrices with the given sizes, in both C++ and Lua.
 
-# Setup
+## Setup
 
 1. Install PAPI and OpenMP
 2. Install LuaJIT through your package manager, or run the following commands if you're using a FEUP PC:
@@ -12,7 +16,7 @@ Source code for the first assignment of the Parallel and Distributed Computing c
 . ~/.bashrc        # Sync terminal with changes, to have `luajit` in PATH
 ```
 
-# Usage
+## Usage
 
 1. To run a matrix product, run one of the following commands:
 
